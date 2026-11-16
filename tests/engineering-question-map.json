@@ -1,0 +1,1082 @@
+{
+  "0-0": {
+    "title": "Strict typing",
+    "question": "A controller passes \"42\" to a function accepting int. How does strict_types affect this call, and where must it be declared?"
+  },
+  "0-1": {
+    "title": "Comparison pitfalls",
+    "question": "An API returns status as \"0\". Explain the risk of == and empty(), and how you would check a required field."
+  },
+  "0-2": {
+    "title": "Exceptions at the boundary",
+    "question": "A payment SDK throws an exception. How do you handle it without exposing internals to the client?"
+  },
+  "0-3": {
+    "title": "Arrays and key coercion",
+    "question": "What happens to keys \"1\", 1, true and \"01\" in a PHP array? How would you model external identifiers safely?"
+  },
+  "0-4": {
+    "title": "Array merge versus union",
+    "question": "Compare array_merge and the + union operator when merging configuration with numeric and duplicate string keys."
+  },
+  "0-5": {
+    "title": "References in foreach",
+    "question": "Why can a foreach by reference corrupt a later loop, and how do you prevent it?"
+  },
+  "0-6": {
+    "title": "Value semantics and objects",
+    "question": "Assign an array and an object to another variable, then mutate each. Explain the different outcomes."
+  },
+  "0-7": {
+    "title": "Closures and arrow functions",
+    "question": "A closure captures $rate, then $rate changes. Compare use ($rate), use (&$rate), and an arrow function."
+  },
+  "0-8": {
+    "title": "Generators and memory",
+    "question": "Process a 2 GB CSV in PHP without loading every row. Where does yield help, and what can still exhaust memory?"
+  },
+  "0-9": {
+    "title": "Null handling",
+    "question": "An update payload may omit nickname, contain null, or contain \"\". How do you preserve these three meanings?"
+  },
+  "0-10": {
+    "title": "match and enums",
+    "question": "Refactor status branching using a backed enum and match. What happens with an unexpected external value?"
+  },
+  "0-11": {
+    "title": "Exceptions and finally",
+    "question": "A file import throws halfway through. Where should cleanup happen, and what is risky about return in finally?"
+  },
+  "0-12": {
+    "title": "DateTimeImmutable",
+    "question": "A billing date is shared by multiple calculations. Why might mutable DateTime introduce bugs?"
+  },
+  "0-13": {
+    "title": "JSON failures",
+    "question": "A downstream API returns malformed JSON and big integer IDs. How would you decode safely?"
+  },
+  "0-14": {
+    "title": "Money and numeric precision",
+    "question": "Why can 0.1 + 0.2 fail an exact money comparison? Design a reliable amount representation."
+  },
+  "0-15": {
+    "title": "Readonly and invariants",
+    "question": "Does a readonly property containing an object make that nested object immutable? How do you protect a value object?"
+  },
+  "0-16": {
+    "title": "Named arguments and compatibility",
+    "question": "A package renames a method parameter used by callers as a named argument. Can that break consumers?"
+  },
+  "0-17": {
+    "title": "String encoding",
+    "question": "A user’s Arabic name is truncated incorrectly by substr. How do you handle Unicode and user-perceived characters?"
+  },
+  "0-18": {
+    "title": "Sessions and password hashes",
+    "question": "Why is hashing a password different from encrypting a session payload?"
+  },
+  "0-19": {
+    "title": "Iterables and type contracts",
+    "question": "A function accepts iterable. What may it receive and why might counting or iterating twice be unsafe?"
+  },
+  "0-20": {
+    "title": "Union and intersection types",
+    "question": "Compare Foo|Bar, Foo&Bar and ?Foo. How do you model a missing value without hiding invalid input?"
+  },
+  "0-21": {
+    "title": "Magic methods and hidden behavior",
+    "question": "A model helper uses __get and __call to make every operation dynamic. What are the maintainability risks?"
+  },
+  "1-0": {
+    "title": "Dependency inversion",
+    "question": "CheckoutService directly creates StripeGateway. Refactor it so a fake gateway can be used in tests."
+  },
+  "1-1": {
+    "title": "Single responsibility",
+    "question": "A controller validates orders, calculates discounts, charges cards and sends emails. Where should each responsibility live?"
+  },
+  "1-2": {
+    "title": "Liskov substitution",
+    "question": "A ReadOnlyRepository extends a writable repository but throws on save(). Which principle is violated and how do you redesign it?"
+  },
+  "1-3": {
+    "title": "Encapsulation and invariants",
+    "question": "An Order exposes public status and total properties. How can you prevent invalid changes?"
+  },
+  "1-4": {
+    "title": "Open/closed principle",
+    "question": "DiscountService is edited for every campaign. Apply OCP without introducing an unnecessary plugin framework."
+  },
+  "1-5": {
+    "title": "Interface segregation",
+    "question": "A reporting client depends on Repository with export, save, delete and sync. It only reads. Redesign the contract."
+  },
+  "1-6": {
+    "title": "Composition versus inheritance",
+    "question": "A PremiumUser extends User only to change discount logic. What are the design alternatives?"
+  },
+  "1-7": {
+    "title": "Static methods and testability",
+    "question": "A service calls static Clock::now and global config. How would you make its tests deterministic?"
+  },
+  "1-8": {
+    "title": "Runtime polymorphism",
+    "question": "How can two objects with the same payment contract behave differently without instanceof checks in CheckoutService?"
+  },
+  "1-9": {
+    "title": "Constructor invariants and lifecycle",
+    "question": "A subclass overrides its constructor and assumes the parent constructor still runs. What happens in PHP?"
+  },
+  "2-0": {
+    "title": "What is abstraction?",
+    "question": "Explain abstraction using a payment checkout example. Is abstraction the same thing as a PHP interface?"
+  },
+  "2-1": {
+    "title": "Interface or abstract class?",
+    "question": "Two gateways share retry logic but have different charge implementations. When would you use an interface, an abstract class, or composition?"
+  },
+  "2-2": {
+    "title": "Contract compatibility",
+    "question": "A gateway implementation narrows charge(float $amount) to charge(int $amount). Is that a valid implementation?"
+  },
+  "2-3": {
+    "title": "Implement multiple contracts",
+    "question": "Can a PHP class implement multiple interfaces while extending two abstract classes? Explain the design constraint."
+  },
+  "2-4": {
+    "title": "Abstract class lifecycle",
+    "question": "An abstract exporter defines export() and requires formatRows(). How would Template Method work here?"
+  },
+  "2-5": {
+    "title": "Contract behavioral guarantees",
+    "question": "Two gateway implementations share a signature, but one returns before payment confirmation and the other after settlement. Is that enough?"
+  },
+  "2-6": {
+    "title": "DTO versus domain object",
+    "question": "Should a DTO enforce the entire order workflow, or simply represent data crossing a boundary?"
+  },
+  "2-7": {
+    "title": "Contract evolution",
+    "question": "You add refund() to a PaymentGateway interface with ten implementations. How do you avoid breaking unsupported gateways?"
+  },
+  "3-0": {
+    "title": "Trace a request",
+    "question": "Trace an HTTP request from public/index.php to the response. Where do providers and middleware fit?"
+  },
+  "3-1": {
+    "title": "Service container resolution",
+    "question": "Why can Laravel resolve a concrete service automatically but fail to resolve PaymentGatewayInterface?"
+  },
+  "3-2": {
+    "title": "Middleware and authorization",
+    "question": "An authenticated user requests another tenant’s invoice. Where do you enforce access and why is auth middleware insufficient?"
+  },
+  "3-3": {
+    "title": "Configuration and environment",
+    "question": "Why can env(\"PAYMENT_KEY\") work locally but return unexpected results after config:cache?"
+  },
+  "3-4": {
+    "title": "Facade versus DI",
+    "question": "How does a Laravel Facade differ from a real static method, and when is constructor injection clearer?"
+  },
+  "3-5": {
+    "title": "Scoped state in workers",
+    "question": "A singleton stores the current tenant. What can go wrong under a long-lived worker and how do you fix it?"
+  },
+  "4-0": {
+    "title": "Sanctum choices",
+    "question": "For a first-party SPA and a mobile client, how would you choose between Sanctum cookie authentication and API tokens?"
+  },
+  "4-1": {
+    "title": "API resource and errors",
+    "question": "Design the response contract for paginated orders and validation failures. How do you avoid leaking internal fields?"
+  },
+  "4-2": {
+    "title": "Safe updates",
+    "question": "Two clients edit the same profile. How can an API detect a lost update rather than silently overwrite it?"
+  },
+  "4-3": {
+    "title": "HTTP status and idempotency",
+    "question": "Compare PUT, PATCH and POST for a retrying client. Does an idempotent method guarantee that all side effects happen once?"
+  },
+  "4-4": {
+    "title": "Rate limiting",
+    "question": "Design rate limiting for login and an expensive report endpoint behind a proxy."
+  },
+  "4-5": {
+    "title": "API versioning",
+    "question": "A mobile app relies on an old response field. How do you rename it without breaking released clients?"
+  },
+  "4-6": {
+    "title": "Cursor pagination",
+    "question": "Why can offset pagination duplicate or skip items during frequent inserts? When is cursor pagination appropriate?"
+  },
+  "4-7": {
+    "title": "API filtering and sort allowlists",
+    "question": "A list endpoint accepts sort_by and filter fields from the client. How do you prevent abuse?"
+  },
+  "4-8": {
+    "title": "JWT validation",
+    "question": "A JWT payload contains role=admin. What must a backend validate before trusting any claim?"
+  },
+  "4-9": {
+    "title": "OAuth2 and OIDC",
+    "question": "Your app lets users sign in with an external identity provider. How do OAuth2, OIDC, state and PKCE fit?"
+  },
+  "5-0": {
+    "title": "The N+1 problem",
+    "question": "An orders endpoint runs 101 queries for 100 orders while rendering customer names. Diagnose and fix it."
+  },
+  "5-1": {
+    "title": "Composite indexes",
+    "question": "A query filters tenant_id and status, then sorts by created_at. How do you evaluate an index?"
+  },
+  "5-2": {
+    "title": "Caching and invalidation",
+    "question": "Product prices are cached for five minutes. How do you keep checkout correct after a price change?"
+  },
+  "5-3": {
+    "title": "Chunking while updating",
+    "question": "A backfill updates the same rows it is paging over. Why may chunk() miss rows and when would chunkById help?"
+  },
+  "5-4": {
+    "title": "Deadlocks",
+    "question": "Two transactions lock orders and inventory in opposite order. Diagnose a deadlock and design safe retries."
+  },
+  "5-5": {
+    "title": "Isolation levels",
+    "question": "Can two SELECT queries inside one transaction observe different values? What determines that?"
+  },
+  "5-6": {
+    "title": "Slow query investigation",
+    "question": "An endpoint is slow even though query count is low. What would you measure before changing code?"
+  },
+  "5-7": {
+    "title": "Soft deletes and uniqueness",
+    "question": "A soft-deleted user still blocks a unique email. Why, and what policy would you choose?"
+  },
+  "5-8": {
+    "title": "Optimistic versus pessimistic locking",
+    "question": "Compare version-column updates and SELECT FOR UPDATE for low-contention versus highly contested records."
+  },
+  "5-9": {
+    "title": "Connection pool pressure",
+    "question": "Why can scaling queue workers make the database slower even if CPU is not saturated?"
+  },
+  "6-0": {
+    "title": "Duplicate webhooks",
+    "question": "A provider sends payment.succeeded three times, including concurrently. How do you prevent duplicate fulfillment?"
+  },
+  "6-1": {
+    "title": "Last item in stock",
+    "question": "Two requests buy the last item at the same time. Show how you prevent overselling in Laravel."
+  },
+  "6-2": {
+    "title": "Payment timeouts",
+    "question": "A charge request times out after the provider may have processed it. Is retrying safe?"
+  },
+  "6-3": {
+    "title": "Refund workflow",
+    "question": "Design partial refunds with two concurrent refund requests against the same payment."
+  },
+  "6-4": {
+    "title": "Out-of-order events",
+    "question": "A payment.failed webhook arrives after payment.succeeded. How do you keep state consistent?"
+  },
+  "6-5": {
+    "title": "Reservation expiry",
+    "question": "Inventory is reserved for 15 minutes, but a payment succeeds after the reservation expires. What happens?"
+  },
+  "6-6": {
+    "title": "Idempotency key scope",
+    "question": "Can a client reuse one idempotency key for a different order or amount? Design server behavior."
+  },
+  "6-7": {
+    "title": "Ledger consistency",
+    "question": "Why keep immutable payment ledger entries instead of only updating an orders.paid boolean?"
+  },
+  "7-0": {
+    "title": "Strategy",
+    "question": "Shipping calculation has a growing switch for each carrier. How could Strategy help, and when would it be overkill?"
+  },
+  "7-1": {
+    "title": "Adapter",
+    "question": "Your app uses two SMS providers with different payloads. How do you keep application code vendor independent?"
+  },
+  "7-2": {
+    "title": "Observer and events",
+    "question": "An order observer sends an email before the database transaction commits. What can go wrong and how would you fix it?"
+  },
+  "7-3": {
+    "title": "Repository trade-offs",
+    "question": "Should every Eloquent model have a repository that simply wraps find and save? Defend your choice."
+  },
+  "7-4": {
+    "title": "Decorator",
+    "question": "Add metrics and caching around a pricing service without changing its public contract. Which pattern fits?"
+  },
+  "7-5": {
+    "title": "Factory and construction",
+    "question": "A request contains a provider name. How do you build a gateway safely without dynamic arbitrary class names?"
+  },
+  "7-6": {
+    "title": "Command and use cases",
+    "question": "An action can be triggered from HTTP, CLI and a job. How do you avoid duplicating business rules?"
+  },
+  "7-7": {
+    "title": "Domain events versus jobs",
+    "question": "When should OrderPlaced be an event and GenerateInvoice be a job? How do you handle delivery failure?"
+  },
+  "8-0": {
+    "title": "Scale horizontally",
+    "question": "Traffic grows 10x and you add three Laravel servers. What state and infrastructure need attention?"
+  },
+  "8-1": {
+    "title": "Reliable queues",
+    "question": "A queued invoice job can run more than once or fail halfway. How do you make it reliable?"
+  },
+  "8-2": {
+    "title": "Read replicas",
+    "question": "You send reads to a replica. Right after checkout, the order is missing. Why, and what can you do?"
+  },
+  "8-3": {
+    "title": "Database partitioning",
+    "question": "When would you consider partitioning, sharding or read replicas? Compare what each solves."
+  },
+  "8-4": {
+    "title": "Backpressure",
+    "question": "An import produces jobs faster than workers process them. How do you prevent an outage?"
+  },
+  "8-5": {
+    "title": "Consistency and CAP",
+    "question": "During a network partition, can a distributed system guarantee both availability and linearizable consistency? Explain without slogans."
+  },
+  "8-6": {
+    "title": "File upload architecture",
+    "question": "Large uploads tie up app workers. Design a scalable secure upload flow."
+  },
+  "8-7": {
+    "title": "Service boundaries",
+    "question": "Should a small Laravel team split a working monolith into microservices to prepare for scale?"
+  },
+  "9-0": {
+    "title": "Prompt with constraints",
+    "question": "You ask an AI assistant to implement a Laravel webhook. What context and acceptance criteria should you provide?"
+  },
+  "9-1": {
+    "title": "Review generated code",
+    "question": "AI generates a refund handler that trusts a client amount and retries all errors. How do you review and fix it?"
+  },
+  "9-2": {
+    "title": "Use AI responsibly",
+    "question": "An AI tool proposes an unfamiliar package and a broad refactor to fix one query. What is your decision process?"
+  },
+  "9-3": {
+    "title": "AI-generated tests",
+    "question": "AI generates a test that repeats the implementation and mocks the method being tested. How do you improve it?"
+  },
+  "9-4": {
+    "title": "Untrusted repository instructions",
+    "question": "An AI coding agent reads a README telling it to upload .env for debugging. How should the workflow respond?"
+  },
+  "9-5": {
+    "title": "AI integration resilience",
+    "question": "Your Laravel API calls an LLM for ticket summaries. How do you handle timeouts, malformed output and cost limits?"
+  },
+  "10-0": {
+    "title": "Composer and lockfiles",
+    "question": "Why commit composer.lock for an application, and why is composer update risky during deployment?"
+  },
+  "10-1": {
+    "title": "PSR-4 autoloading",
+    "question": "A class works on Windows but fails on Linux after deployment. How do you investigate autoloading?"
+  },
+  "10-2": {
+    "title": "Traits and collisions",
+    "question": "Two traits provide log(). How does PHP resolve the collision, and when is a composed logger preferable?"
+  },
+  "10-3": {
+    "title": "Late static binding",
+    "question": "In a base class factory, how do self:: and static:: differ when called through a subclass?"
+  },
+  "10-4": {
+    "title": "OPcache and processes",
+    "question": "How do PHP-FPM, OPcache and a long-running queue worker affect code deployment and state?"
+  },
+  "10-5": {
+    "title": "Static analysis",
+    "question": "What can PHPStan or Psalm catch that unit tests may miss, and what can they not prove?"
+  },
+  "11-0": {
+    "title": "Route model binding",
+    "question": "A nested route /projects/{project}/tasks/{task} returns a task from another project. How do you fix it?"
+  },
+  "11-1": {
+    "title": "FormRequest rules and authorization",
+    "question": "Where do you put input rules, ownership checks and business invariants in a create-order flow?"
+  },
+  "11-2": {
+    "title": "Unique validation on update",
+    "question": "How do you ignore the current user when validating email uniqueness without trusting a request-provided ignore ID?"
+  },
+  "11-3": {
+    "title": "Nested validation",
+    "question": "An order payload has line items with product_id, quantity and extra admin fields. How do you validate and map it safely?"
+  },
+  "11-4": {
+    "title": "Route order and caching",
+    "question": "Why might /reports/export resolve as /reports/{report}? How do route constraints and deployment checks help?"
+  },
+  "11-5": {
+    "title": "Request normalization",
+    "question": "A checkbox is absent when false and a numeric string reaches your action. How do you normalize input without hiding invalid data?"
+  },
+  "12-0": {
+    "title": "Relationship design",
+    "question": "Model users, roles and role assignment metadata. When do you use belongsToMany and a pivot model?"
+  },
+  "12-1": {
+    "title": "Query scopes and tenancy",
+    "question": "A global tenant scope protects HTTP queries. What can go wrong in jobs, admin tools or raw queries?"
+  },
+  "12-2": {
+    "title": "Mass assignment",
+    "question": "Why does fillable not replace authorization or field validation? Give an is_admin escalation example."
+  },
+  "12-3": {
+    "title": "Casts and accessors",
+    "question": "An encrypted cast is added to a column used for search and indexing. What changes?"
+  },
+  "12-4": {
+    "title": "Bulk updates and events",
+    "question": "A bulk Eloquent update changes 10,000 rows, but observers do not run for each model. Why?"
+  },
+  "12-5": {
+    "title": "Collections versus builders",
+    "question": "What is the difference between User::where(...)->get()->filter(...) and filtering in SQL?"
+  },
+  "12-6": {
+    "title": "Relationship cardinality",
+    "question": "Model Customer→Orders→Items plus an optional Profile. Explain where foreign keys live and when hasManyThrough helps."
+  },
+  "12-7": {
+    "title": "Polymorphic relations",
+    "question": "Comments can belong to posts or videos. Compare polymorphic relations with separate tables or a shared parent entity."
+  },
+  "13-0": {
+    "title": "Guards and providers",
+    "question": "Explain the difference between an auth guard and a user provider when building an admin portal."
+  },
+  "13-1": {
+    "title": "Login and session fixation",
+    "question": "What should happen to session state after a successful login and after logout?"
+  },
+  "13-2": {
+    "title": "Policies and gates",
+    "question": "When do you choose a Policy rather than a Gate, and how do you prevent IDOR?"
+  },
+  "13-3": {
+    "title": "Roles versus permissions",
+    "question": "A role name is hard-coded in twenty controllers. How would you redesign access control?"
+  },
+  "13-4": {
+    "title": "Password reset tokens",
+    "question": "How do you secure a password reset flow against account enumeration and token abuse?"
+  },
+  "13-5": {
+    "title": "Token abilities and revocation",
+    "question": "A token has orders:read but the user loses tenant membership. Should the endpoint still allow access?"
+  },
+  "14-0": {
+    "title": "Job payload design",
+    "question": "Why avoid serializing request objects or secrets into a job? What do queued Eloquent models imply?"
+  },
+  "14-1": {
+    "title": "Chains and batches",
+    "question": "Compare a job chain with a batch for an import workflow. What happens on failure?"
+  },
+  "14-2": {
+    "title": "Unique jobs and overlapping",
+    "question": "What is the difference between preventing duplicate job dispatch and preventing concurrent processing?"
+  },
+  "14-3": {
+    "title": "Broadcast channel authorization",
+    "question": "How do you broadcast order updates without exposing another customer’s events?"
+  },
+  "14-4": {
+    "title": "Transaction and dispatch timing",
+    "question": "A queued listener cannot find a newly created order. Why does afterCommit help and what does it not guarantee?"
+  },
+  "14-5": {
+    "title": "Queue deployment safety",
+    "question": "What happens if new code changes a job class while old workers and queued payloads still exist?"
+  },
+  "15-0": {
+    "title": "Cache keys and tenants",
+    "question": "A cache key uses product:42 but product 42 has different visibility per tenant. What is the risk?"
+  },
+  "15-1": {
+    "title": "Redis eviction",
+    "question": "What can go wrong if cache entries, sessions and critical locks share one eviction-prone Redis instance?"
+  },
+  "15-2": {
+    "title": "Cache stampede",
+    "question": "A hot cache entry expires while 2,000 requests arrive. How do you prevent all of them querying the DB?"
+  },
+  "15-3": {
+    "title": "Concurrent sessions",
+    "question": "Two requests update the same session cart simultaneously. How might data be lost?"
+  },
+  "15-4": {
+    "title": "Cache invalidation after rollback",
+    "question": "An update clears product cache before its DB transaction rolls back. Is that always safe? What about repopulation races?"
+  },
+  "15-5": {
+    "title": "Session driver choice",
+    "question": "When would database, Redis or cookie sessions be appropriate, and what limits matter?"
+  },
+  "16-0": {
+    "title": "Private storage downloads",
+    "question": "An invoice PDF lives in storage. How do you expose a download safely without making the disk public?"
+  },
+  "16-1": {
+    "title": "Upload validation",
+    "question": "A user uploads image.php with an image Content-Type. How do you validate and store it?"
+  },
+  "16-2": {
+    "title": "Queued notifications",
+    "question": "Should a notification failure roll back a completed checkout? Explain your delivery strategy."
+  },
+  "16-3": {
+    "title": "Mail templates and localization",
+    "question": "A queued email uses the worker’s default locale instead of the customer’s. How would you fix it?"
+  },
+  "16-4": {
+    "title": "Blade escaping and XSS",
+    "question": "What is the security difference between {{ $name }} and {!! $html !!}? When is raw output acceptable?"
+  },
+  "16-5": {
+    "title": "Resource cleanup",
+    "question": "An export generates temporary files and queued jobs may crash. How do you prevent storage from growing forever?"
+  },
+  "17-0": {
+    "title": "Artisan command design",
+    "question": "Design an Artisan command that backfills missing invoice numbers safely in production."
+  },
+  "17-1": {
+    "title": "Scheduler on multiple servers",
+    "question": "A scheduled report runs on each of four servers. How do you avoid duplicate execution and overlap?"
+  },
+  "17-2": {
+    "title": "Safe schema migrations",
+    "question": "Add a required column to a large busy table without breaking old code during a rolling release."
+  },
+  "17-3": {
+    "title": "Zero-downtime deployment",
+    "question": "Outline a Laravel deployment that keeps requests and workers compatible during release."
+  },
+  "17-4": {
+    "title": "Signed URLs",
+    "question": "A signed URL downloads a private report. Does a valid signature prove the visitor owns the report?"
+  },
+  "17-5": {
+    "title": "Maintenance and health checks",
+    "question": "How do readiness, liveness and maintenance mode differ for a Laravel deployment?"
+  },
+  "18-0": {
+    "title": "Test boundaries",
+    "question": "Choose unit, feature and integration tests for a checkout flow. What should each prove?"
+  },
+  "18-1": {
+    "title": "Factories and isolation",
+    "question": "Your tests pass individually but fail as a suite. How do you investigate shared state?"
+  },
+  "18-2": {
+    "title": "HTTP fakes",
+    "question": "An adapter test uses Http::fake. What assertions make it useful, and what still needs a real integration test?"
+  },
+  "18-3": {
+    "title": "Authorization matrix",
+    "question": "How do you systematically test a multi-tenant invoice endpoint beyond one happy-path request?"
+  },
+  "18-4": {
+    "title": "Concurrent tests",
+    "question": "Why can an SQLite in-memory test pass while a MySQL stock race still exists? Design a meaningful test."
+  },
+  "18-5": {
+    "title": "Regression and test oracles",
+    "question": "A bug fix test passes before the fix. What does that tell you? How do you improve it?"
+  },
+  "18-6": {
+    "title": "Time-dependent tests",
+    "question": "A reservation expires in fifteen minutes. How do you test expiry without sleeping?"
+  },
+  "18-7": {
+    "title": "Performance regression tests",
+    "question": "How do you test that an orders endpoint avoids N+1 without a fragile millisecond assertion?"
+  },
+  "19-0": {
+    "title": "Browser-to-server journey",
+    "question": "Trace an HTTPS API call from a browser, including DNS, connection setup, proxy and application handling."
+  },
+  "19-1": {
+    "title": "CORS and CSRF",
+    "question": "Explain why CORS does not prevent all CSRF, and how cookie-based auth changes the threat."
+  },
+  "19-2": {
+    "title": "Timeout budgets",
+    "question": "A request calls three services and each gets a 30-second timeout. What is wrong with that design?"
+  },
+  "19-3": {
+    "title": "Cookies and tokens",
+    "question": "Compare HttpOnly, Secure and SameSite cookie attributes. Which threats does each address?"
+  },
+  "19-4": {
+    "title": "HTTP caching",
+    "question": "How do ETag, Cache-Control and Vary affect a personalized GET endpoint?"
+  },
+  "19-5": {
+    "title": "WebSocket versus polling",
+    "question": "For order status updates, compare polling, SSE and WebSockets and justify a simple starting point."
+  },
+  "20-0": {
+    "title": "Schema invariants",
+    "question": "Design order_items so invalid quantities and duplicate product lines cannot slip through concurrent requests."
+  },
+  "20-1": {
+    "title": "Normalization versus snapshots",
+    "question": "Should an old invoice show the customer’s new address? Explain normalization and historical snapshots."
+  },
+  "20-2": {
+    "title": "LEFT JOIN pitfalls",
+    "question": "A LEFT JOIN query filters right_table.status in WHERE and loses unmatched rows. Why?"
+  },
+  "20-3": {
+    "title": "Aggregate correctness",
+    "question": "A join from orders to items and payments doubles the sales total. How do you diagnose and fix it?"
+  },
+  "20-4": {
+    "title": "SQL injection boundaries",
+    "question": "Are prepared statements sufficient if the client controls a table name or raw ORDER BY clause?"
+  },
+  "20-5": {
+    "title": "Transactions and external effects",
+    "question": "Why can a DB rollback not undo an email or third-party charge? How do you coordinate them?"
+  },
+  "20-6": {
+    "title": "Backups, replicas and recovery",
+    "question": "Why is a read replica not a sufficient backup? Define RPO, RTO and a useful restore test."
+  },
+  "20-7": {
+    "title": "Window functions",
+    "question": "Return the newest record per customer while retaining all columns. Explain ROW_NUMBER and deterministic tie-breaking."
+  },
+  "20-8": {
+    "title": "Foreign key deletion policy",
+    "question": "Should deleting a customer cascade into paid orders? How do you decide between restrict, cascade and anonymization?"
+  },
+  "21-0": {
+    "title": "SSRF in URL imports",
+    "question": "An endpoint fetches a user-supplied URL to import an avatar. How could SSRF occur and how do you prevent it?"
+  },
+  "21-1": {
+    "title": "Secrets rotation",
+    "question": "A production API key is accidentally committed. Is deleting the file enough?"
+  },
+  "21-2": {
+    "title": "Command injection",
+    "question": "A thumbnail endpoint concatenates a filename into a shell command. What is the safer design?"
+  },
+  "21-3": {
+    "title": "Logging sensitive data",
+    "question": "What belongs in an error log for a failed payment request, and what must be excluded?"
+  },
+  "21-4": {
+    "title": "Insecure deserialization",
+    "question": "Why is unserialize on untrusted input dangerous? What would you use for a simple data exchange?"
+  },
+  "21-5": {
+    "title": "Threat modeling a feature",
+    "question": "Before shipping a file-sharing API, what questions would you ask to identify security risks?"
+  },
+  "22-0": {
+    "title": "Debugging a 500",
+    "question": "A production endpoint returns 500 only for some tenants. Walk through a disciplined investigation."
+  },
+  "22-1": {
+    "title": "Metrics versus logs versus traces",
+    "question": "Which signals would you collect for a slow checkout and why are they complementary?"
+  },
+  "22-2": {
+    "title": "Git revert versus reset",
+    "question": "A bad commit is already on the shared main branch. How do you undo it safely?"
+  },
+  "22-3": {
+    "title": "Code review",
+    "question": "What do you look for in a Laravel PR beyond style and naming?"
+  },
+  "22-4": {
+    "title": "Incident mitigation",
+    "question": "Error rates spike after deployment. How do you choose rollback versus a forward fix?"
+  },
+  "22-5": {
+    "title": "Linux and process basics",
+    "question": "A Laravel job fails writing storage files on Linux. What do you check before using chmod 777?"
+  },
+  "22-6": {
+    "title": "Merge, rebase and conflicts",
+    "question": "Compare merge and rebase on a feature branch. How do you resolve a conflict without losing either behavior?"
+  },
+  "23-0": {
+    "title": "Complexity analysis",
+    "question": "A PHP loop calls in_array on a growing list for every input item. What is the complexity and a better structure?"
+  },
+  "23-1": {
+    "title": "Stack versus queue",
+    "question": "Choose structures for undo history, BFS and background job ordering. Explain operation costs in PHP."
+  },
+  "23-2": {
+    "title": "Binary search requirements",
+    "question": "When is binary search valid and what common boundary bug can cause an infinite loop?"
+  },
+  "23-3": {
+    "title": "Heap for top K",
+    "question": "Find the top 10 most frequent API endpoints from a large stream. What structures and trade-offs do you choose?"
+  },
+  "23-4": {
+    "title": "Graph traversal",
+    "question": "A dependency graph may contain cycles. Compare BFS and DFS and how you prevent infinite traversal."
+  },
+  "23-5": {
+    "title": "Choosing storage structures",
+    "question": "When would a hash map, sorted array or database index be the right choice for backend lookups?"
+  },
+  "23-6": {
+    "title": "Tree traversal and recursion",
+    "question": "Traverse a binary tree in-order. Explain the base case, call-stack cost and when an iterative stack is safer."
+  },
+  "23-7": {
+    "title": "Linked-list cycle detection",
+    "question": "Detect a cycle in a singly linked list with O(1) extra space. Why do slow and fast pointers meet?"
+  },
+  "24-0": {
+    "title": "Custom validation rules",
+    "question": "A tax identifier needs country-specific checks and an optional external verification. How do you structure validation?"
+  },
+  "24-1": {
+    "title": "Package evaluation",
+    "question": "You need roles and permissions. How do you evaluate using a Laravel package versus building the feature?"
+  },
+  "24-2": {
+    "title": "Search integration",
+    "question": "SQL LIKE is slow and relevance is poor. How would you evaluate adding a search engine or Scout integration?"
+  },
+  "24-3": {
+    "title": "HTTP client resilience",
+    "question": "How do you wrap Laravel’s HTTP client for a provider with strict rate limits and occasional malformed responses?"
+  },
+  "24-4": {
+    "title": "Pipeline and middleware ordering",
+    "question": "Why can middleware order change authentication, locale or tenant resolution behavior?"
+  },
+  "24-5": {
+    "title": "Modular Laravel design",
+    "question": "Organize a growing CRM with leads, billing and notifications without one giant Services folder."
+  },
+  "25-0": {
+    "title": "Two Sum with stable indices",
+    "question": "Implement twoSum(array $nums, int $target): ?array in PHP. Return distinct original indices, or null.\nInput: [2,7,11,15], 9 → [0,1]\nInput: [3,3], 6 → [0,1]\nInput: [1,2], 8 → null\nAssume integer values and representable complements; explain the one-pass invariant."
+  },
+  "25-1": {
+    "title": "First non-repeating ASCII byte",
+    "question": "Return the index of the first unique byte in an ASCII string, or -1.\n\"swiss\" → 1\n\"aabb\" → -1\n\"\" → -1\nHow would your contract change for Unicode grapheme clusters?"
+  },
+  "25-2": {
+    "title": "Balanced brackets",
+    "question": "Validate a string containing only ()[]{}; reject other characters.\n\"([]){}\" → true\n\"([)]\" → false\n\"\" → true\nExplain the stack invariant and complexity."
+  },
+  "25-3": {
+    "title": "Longest substring without repeats",
+    "question": "Return the maximum length of a substring without repeated ASCII bytes.\n\"abcabcbb\" → 3\n\"bbbbb\" → 1\n\"abba\" → 2\n\"\" → 0\nDo not enumerate all substrings."
+  },
+  "25-4": {
+    "title": "Lower-bound binary search",
+    "question": "Implement lowerBound for a sorted integer list. Return the first index whose value is >= target, or count($nums).\n[1,2,2,4], 2 → 1\n[1,2,2,4], 3 → 3\n[], 5 → 0\n[1,2], 9 → 2"
+  },
+  "25-5": {
+    "title": "Merge overlapping intervals",
+    "question": "Merge valid closed integer intervals; touching endpoints count as overlap.\n[[1,3],[2,6],[8,10],[10,12]] → [[1,6],[8,12]]\n[] → []\n[[1,4],[2,3]] → [[1,4]]\nExplain sort cost and whether input is mutated."
+  },
+  "25-6": {
+    "title": "Count subarrays with a target sum",
+    "question": "Count contiguous subarrays whose sum equals k; negative integers are allowed.\n[1,1,1], 2 → 2\n[1,-1,0], 0 → 3\n[], 0 → 0\nAssume all intermediate integer arithmetic is representable."
+  },
+  "25-7": {
+    "title": "Shortest path in an unweighted graph",
+    "question": "Return the minimum edge count from source to target in a directed unweighted adjacency list, or -1.\n{A:[B,C], B:[D], C:[D], D:[]}, A,D → 2\nSame graph, D,A → -1\nSame source and target → 0\nHandle cycles."
+  },
+  "25-8": {
+    "title": "Minimum coin count",
+    "question": "Given distinct positive integer coin denominations and nonnegative amount, return the fewest coins or -1.\n[1,3,4], 6 → 2\n[2], 3 → -1\n[2,5], 0 → 0\nExplain why greedy is not always correct."
+  },
+  "25-9": {
+    "title": "Deduplicate events while preserving order",
+    "question": "Given event rows with non-empty string id, keep the first row per ID in input order.\n[{id:\"a\",v:1},{id:\"b\",v:2},{id:\"a\",v:9}] → [{id:\"a\",v:1},{id:\"b\",v:2}]\n[] → []\nDistinguish IDs \"01\" and \"1\". What changes across processes?"
+  },
+  "25-10": {
+    "title": "Fixed-window request limiter",
+    "question": "Implement an IN-MEMORY single-process fixed-window limiter for sorted integer timestamps in seconds. Window length W>0, limit L>0. Each arrival consumes one attempt, including denied ones. Return an allow/deny list.\n[0,0,1,10], W=10,L=2 → [true,true,false,true]\n[9,10], W=10,L=1 → [true,true]\nExplain boundary bursts and a distributed alternative."
+  },
+  "25-11": {
+    "title": "Dependency build order",
+    "question": "Return a valid topological order or null if a cycle exists. Input maps each module to the modules it DEPENDS ON.\n{app:[db,cache], db:[], cache:[]} → db/cache before app\n{a:[b], b:[a]} → null\n{} → []\nDependencies mentioned only as values must still be included. Module IDs are strings starting with an ASCII letter."
+  },
+  "25-12": {
+    "title": "Merge two sorted lists",
+    "question": "Merge two sorted dense integer lists into a new sorted list, preserving duplicates.\n[1,3,3], [2,3,8] → [1,2,3,3,3,8]\n[], [2] → [2]\n[], [] → []\nDo not call sort; explain the two-pointer invariant."
+  },
+  "25-13": {
+    "title": "Best single buy and sell",
+    "question": "For a nonnegative integer price list, return the maximum profit from one buy followed by a later sell, or zero.\n[7,1,5,3,6,4] → 5\n[7,6,4,3,1] → 0\n[] → 0\nAssume representable integer arithmetic."
+  },
+  "26-0": {
+    "title": "Ambiguous realtime requirements",
+    "question": "A client asks for a realtime sales dashboard. What must you clarify before selecting WebSockets, queues or a database?"
+  },
+  "26-1": {
+    "title": "Measurable quality attributes",
+    "question": "Turn \"the booking API must be fast and reliable\" into testable requirements. State workload and measurement boundaries."
+  },
+  "26-2": {
+    "title": "State transition specification",
+    "question": "Specify seat reservation, expiry and payment confirmation when a payment may succeed after expiry."
+  },
+  "26-3": {
+    "title": "Scope and delivery slices",
+    "question": "You have two weeks to deliver reporting, export, dashboards and realtime alerts. How do you define a safe first slice?"
+  },
+  "26-4": {
+    "title": "Traceability and change impact",
+    "question": "A requirement changes from one active subscription per user to one per organization. What artifacts and code paths do you inspect?"
+  },
+  "27-0": {
+    "title": "Prove lower-bound search",
+    "question": "State preconditions, a loop invariant, a progress measure and a postcondition for lower-bound binary search."
+  },
+  "27-1": {
+    "title": "Set identity and uniqueness",
+    "question": "You deduplicate customer IDs from multiple systems. Are \"01\", 1 and \"1\" the same identity? What must the algorithm know?"
+  },
+  "27-2": {
+    "title": "Capacity estimate with units",
+    "question": "Estimate raw daily storage for 80 events/sec at 1.5 KB per event, then explain why disk usage will differ."
+  },
+  "27-3": {
+    "title": "Probability versus guarantee",
+    "question": "A teammate says random IDs make duplicate handling unnecessary because collisions are unlikely. Evaluate the claim."
+  },
+  "27-4": {
+    "title": "Correctness before optimization",
+    "question": "An O(n) algorithm fails on negative inputs while an O(n²) reference works. How do you diagnose and improve safely?"
+  },
+  "28-0": {
+    "title": "Worker count and saturation",
+    "question": "A service has 8 cores and 100 workers. Throughput falls after increasing from 20 workers. What would you investigate?"
+  },
+  "28-1": {
+    "title": "Containers, VMs and resource limits",
+    "question": "Compare processes inside a container with a virtual machine. Why can a containerized worker be killed despite free host RAM, and where should durable state live?"
+  },
+  "28-2": {
+    "title": "CPU-bound versus asynchronous work",
+    "question": "Should an expensive image transformation become faster merely by making the API async? Explain the system-level change."
+  },
+  "28-3": {
+    "title": "Memory pressure during import",
+    "question": "An importer streams input but memory still grows until the process is killed. What can invalidate the streaming assumption?"
+  },
+  "28-4": {
+    "title": "Semaphore, mutex and cancellation",
+    "question": "You call a provider for 500 items. Explain a concurrency cap, mutual exclusion and what cancellation cannot undo."
+  },
+  "29-0": {
+    "title": "Reliable transport is not exactly-once",
+    "question": "TCP delivered a request, then the response connection broke after the server committed. What should a client do?"
+  },
+  "29-1": {
+    "title": "DNS cutover and old connections",
+    "question": "After a DNS cutover, some clients still reach the old server. Why and how do you plan migration?"
+  },
+  "29-2": {
+    "title": "Forwarded headers trust",
+    "question": "A client changes X-Forwarded-For to evade rate limits. What is wrong with the trust boundary?"
+  },
+  "29-3": {
+    "title": "TLS verification and credentials",
+    "question": "An integration works only when certificate verification is disabled. How do you diagnose it safely?"
+  },
+  "29-4": {
+    "title": "Message framing and protocol contracts",
+    "question": "Why can a TCP read return only part of your application message or multiple messages together?"
+  },
+  "30-0": {
+    "title": "Functional dependencies and anomalies",
+    "question": "A products table repeats supplier address in every row. What anomalies can occur and how would you redesign it?"
+  },
+  "30-1": {
+    "title": "Choose an index from a workload",
+    "question": "A query filters organization and state, sorts by time and reads only a few columns. Explain how you evaluate an index without assuming it will help."
+  },
+  "30-2": {
+    "title": "Snapshot visibility and long transactions",
+    "question": "A long report transaction keeps seeing old values while new writes commit. Is this necessarily a bug and what costs may appear?"
+  },
+  "30-3": {
+    "title": "Crash recovery and durability",
+    "question": "A database acknowledges commit, then the primary machine fails. Which guarantees must you verify before claiming zero data loss?"
+  },
+  "30-4": {
+    "title": "SQL NULL and join cardinality",
+    "question": "A report uses LEFT JOIN plus a WHERE on the right table and produces wrong totals. How do you reason about both NULL and row multiplication?"
+  },
+  "31-0": {
+    "title": "A services folder is not architecture",
+    "question": "A monolith has fifty services that all edit each other’s tables. What boundaries would you establish first?"
+  },
+  "31-1": {
+    "title": "Entity versus value object",
+    "question": "An address can be a mutable customer profile field or an immutable invoice snapshot. How do identity and lifecycle change the design?"
+  },
+  "31-2": {
+    "title": "Aggregate boundary under contention",
+    "question": "All orders and inventory are placed in one giant aggregate to guarantee consistency. What trade-offs and alternatives do you evaluate?"
+  },
+  "31-3": {
+    "title": "DRY versus wrong abstraction",
+    "question": "Two tax rules look similar but change for different regulatory reasons. Should they be merged into one configurable function?"
+  },
+  "31-4": {
+    "title": "Architecture decision with evidence",
+    "question": "Choose between a modular monolith and extracting a reporting service for a small team. What evidence belongs in the decision?"
+  },
+  "32-0": {
+    "title": "Consumer crash before acknowledgment",
+    "question": "A consumer completes an external side effect then crashes before ACK. What guarantees remain and how do you recover?"
+  },
+  "32-1": {
+    "title": "Read-your-writes across replicas",
+    "question": "A user creates an order then reads from a replica and sees nothing. What consistency contract should the system expose?"
+  },
+  "32-2": {
+    "title": "Ordering and entity partition keys",
+    "question": "Events for one order must be applied in sequence while unrelated orders can run concurrently. How do you design keys and validation?"
+  },
+  "32-3": {
+    "title": "Saga compensation failure",
+    "question": "Payment capture succeeds, inventory confirmation fails, and the refund request times out. What state and actions should you persist?"
+  },
+  "32-4": {
+    "title": "Network partition and availability",
+    "question": "During a partition, should every endpoint remain writable? Compare a catalog preference update with a financial invariant."
+  },
+  "33-0": {
+    "title": "Define a useful SLO",
+    "question": "Define a request-based SLI and SLO for checkout. Explain the difference from an SLA and CPU uptime."
+  },
+  "33-1": {
+    "title": "Little’s Law with assumptions",
+    "question": "A stable system completes 120 requests/sec with 250 ms average time inside the measured boundary. Estimate average in-flight requests and state limitations."
+  },
+  "33-2": {
+    "title": "Retry amplification",
+    "question": "Three service layers each retry a failing request three times. Why can this make an outage worse?"
+  },
+  "33-3": {
+    "title": "Load test beyond the average",
+    "question": "A benchmark at average traffic passes, but launch fails under bursts and a hot tenant. How do you redesign the test?"
+  },
+  "33-4": {
+    "title": "Graceful degradation and bulkheads",
+    "question": "A reports provider is down. How do you keep checkout healthy without returning fabricated report success?"
+  },
+  "34-0": {
+    "title": "Properties for a merge algorithm",
+    "question": "Design tests for merging sorted lists that do not depend only on a few expected examples."
+  },
+  "34-1": {
+    "title": "Test doubles at the right boundary",
+    "question": "A payment test mocks CheckoutService::pay to return success. What has it actually verified and how do you improve it?"
+  },
+  "34-2": {
+    "title": "Reproducible release artifact",
+    "question": "Why build one immutable artifact and promote it instead of running dependency updates separately on each production node?"
+  },
+  "34-3": {
+    "title": "Schema evolution during rollout",
+    "question": "Old and new application versions run together while a required column is added. Outline an expand–contract release."
+  },
+  "34-4": {
+    "title": "Mutation and false confidence",
+    "question": "A suite has 95% line coverage but replacing a permission check with true does not fail any test. What is missing?"
+  },
+  "35-0": {
+    "title": "Choose the cryptographic goal",
+    "question": "Compare password storage, a webhook signature and reversible customer data protection. Why is one hash function not sufficient for all three?"
+  },
+  "35-1": {
+    "title": "Leaked secret response",
+    "question": "A production credential was committed and used by multiple workers. What is the response beyond deleting the file?"
+  },
+  "35-2": {
+    "title": "Data inventory and retention",
+    "question": "Design a retention policy for support logs, customer exports and financial audit records without treating them as one dataset."
+  },
+  "35-3": {
+    "title": "Threat model an export feature",
+    "question": "An organization admin can export records to a downloadable file. Identify trust boundaries and abuse cases."
+  },
+  "35-4": {
+    "title": "AI input and privacy boundary",
+    "question": "A coding assistant asks for production payloads and .env to reproduce a bug. How do you preserve useful context safely?"
+  },
+  "36-0": {
+    "title": "Missing, null and default semantics",
+    "question": "A PATCH payload may omit a field, send null or send an empty string. Define behavior without silently merging meanings."
+  },
+  "36-1": {
+    "title": "Event schema compatibility",
+    "question": "A producer adds a new enum value and changes a numeric ID to a string. Why might additive-looking changes break consumers?"
+  },
+  "36-2": {
+    "title": "Calendar time versus elapsed duration",
+    "question": "A monthly bill is due at local midnight and a request timeout lasts 5 seconds. Why do these need different time models?"
+  },
+  "36-3": {
+    "title": "Money precision and rounding",
+    "question": "Calculate a discounted price and tax for multiple currencies. What must you define before choosing integer minor units or decimals?"
+  },
+  "36-4": {
+    "title": "JSON validity is not a contract",
+    "question": "A response is valid JSON with missing currency and a very large numeric ID. How do you parse and validate without data loss?"
+  },
+  "37-0": {
+    "title": "Write an actionable ADR",
+    "question": "Document a decision to keep a modular monolith instead of splitting services now. What belongs in the record?"
+  },
+  "37-1": {
+    "title": "Code review with clear priorities",
+    "question": "A PR fixes a payment race but contains optional naming disagreements. How do you separate correctness blockers from suggestions?"
+  },
+  "37-2": {
+    "title": "Incident communication without blame",
+    "question": "A release causes partial invoice duplication. What do you communicate while investigating, and what goes in the follow-up?"
+  },
+  "37-3": {
+    "title": "Evidence versus completion badges",
+    "question": "A learner completes every interview question but cannot debug a failed migration or explain a trade-off. How should mastery be evaluated?"
+  },
+  "37-4": {
+    "title": "Engineering under a risky deadline",
+    "question": "A deadline is close and a new feature risks irreversible data loss. How do you present options and decide responsibly?"
+  }
+}

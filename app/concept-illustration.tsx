@@ -1,0 +1,7 @@
+import {StructuredText} from './reading-text';
+import {useId} from 'react';
+import {conceptVisuals} from './concept-visuals';
+export function ConceptIllustration({id,title}:{id:string;title:string}){
+ const uid=useId().replace(/:/g,''),points=conceptVisuals[id];if(!points)return null;
+ return <figure className="concept-illustration"><span className="eyebrow">الصورة الكبيرة · خريطة الفكرة</span><div className="concept-image-scroll"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 265" role="img" aria-labelledby={`${uid}-title`} aria-describedby={`${uid}-desc`} direction="ltr"><title id={`${uid}-title`}>{title}</title><desc id={`${uid}-desc`}>{points.join('. ')}</desc><rect width="760" height="265" rx="14" fill="#f5f2fc"/>{points.map((p,i)=>{const x=20+i%2*370,y=22+Math.floor(i/2)*122;return <g key={p}><rect x={x} y={y} width="350" height="100" rx="10" fill="white" stroke="#d9ccec"/><circle cx={x+27} cy={y+27} r="13" fill="#6b45b8"/><text x={x+27} y={y+31} textAnchor="middle" fill="white" fontSize="12">{i+1}</text><foreignObject x={x+18} y={y+47} width="316" height="49"><div style={{fontFamily:'Arial,sans-serif',fontSize:16,fontWeight:600,color:'#35264d',lineHeight:1.5,textAlign:'left'}}>{p}</div></foreignObject></g>})}</svg></div><figcaption><StructuredText compact text="الأربع نقاط دي خريطة للعلاقات والحدود المهمة في المفهوم، مش ترتيب تنفيذ إجباري. اربط كل نقطة بالمثال والكود، وجرّب تشرح أثر حذفها من التصميم."/></figcaption></figure>
+}

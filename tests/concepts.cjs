@@ -1,0 +1,13 @@
+const ts=require('typescript'),fs=require('node:fs'),vm=require('node:vm'),path=require('node:path'),assert=require('node:assert/strict');
+const root=path.resolve(__dirname,'..'),cache={};
+function load(name){const file=path.resolve(root,'app',name+'.ts');if(cache[file])return cache[file].exports;const module={exports:{}};cache[file]=module;const code=ts.transpileModule(fs.readFileSync(file,'utf8'),{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;vm.runInThisContext('(function(require,module,exports){'+code+'\n})',{filename:file})(n=>n.startsWith('.')?load(n.slice(2)):require(n),module,module.exports);return module.exports}
+const {concepts}=load('concepts'),{tracks,totalQuestions}=load('content'),{conceptsForQuestion,searchConcepts}=load('concept-links');
+assert.equal(concepts.length,102);assert.equal(new Set(concepts.map(c=>c.id)).size,102);
+for(const c of concepts){for(const key of ['intro','how','when','code','trap','check'])assert(c[key].length>30,`${c.id}: ${key}`);assert(c.intro.length+c.how.length+c.when.length>380,c.id);assert(c.walkthrough.length>=2);assert(c.walkthrough.every(s=>s.length>50));}
+let linked=0;for(let i=0;i<tracks.length;i++)for(const q of tracks[i].questions){const related=conceptsForQuestion(i,q);assert(related.length>=2,`${i}/${q.title}`);assert(related.every(c=>concepts.some(x=>x.id===c.id)));linked++}assert.equal(linked,totalQuestions);
+assert.equal(conceptsForQuestion(2,tracks[2].questions[0])[0].id,'abstraction');assert.equal(conceptsForQuestion(2,tracks[2].questions[1])[0].id,'abstract-class');
+assert.equal(conceptsForQuestion(25,tracks[25].questions[5])[0].id,'two-pointers');assert.equal(conceptsForQuestion(25,tracks[25].questions[6])[0].id,'hash-maps');
+assert(searchConcepts('Abstraction','all').some(c=>c.id==='abstraction'));assert(searchConcepts('','Laravel').length>=10);assert.equal(searchConcepts('missingxyz987','all').length,0);
+function luminance(hex){const rgb=hex.replace('#','').match(/../g).map(x=>parseInt(x,16)/255).map(x=>x<=.04045?x/12.92:((x+.055)/1.055)**2.4);return rgb[0]*.2126+rgb[1]*.7152+rgb[2]*.0722}function contrast(a,b){const [hi,lo]=[luminance(a),luminance(b)].sort((x,y)=>y-x);return(hi+.05)/(lo+.05)}
+for(const [fg,bg] of [['#253149','#ffffff'],['#536076','#f8f8fd'],['#5935ad','#ede7fa'],['#f5efff','#272337'],['#61431f','#fff7eb']])assert(contrast(fg,bg)>=4.5,`${fg}/${bg} needs WCAG AA`);
+console.log(JSON.stringify({concepts:102,linkedExercises:linked,distinctAbstractionLessons:true,codingConceptLinks:true,textContrast:'AA key reading surfaces',tests:'passed'}));
