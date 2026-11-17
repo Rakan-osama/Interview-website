@@ -1,75 +1,55 @@
-# Backend Lab — Start here
+# Interview Platform — start here
 
-This is the complete tracked source of Backend Lab, including its Arabic explanations, exercises, concept library, feature-design playbooks, diagrams, UI, and tests.
+The new platform runs locally at **http://localhost:8080** with Laravel, React, XAMPP Apache and MariaDB.
 
-## Stack
+## First setup
 
-React 19, TypeScript, Vinext (Vite with Next.js-compatible App Router), Tailwind/CSS, and a Cloudflare Worker entry point. PHP and Laravel examples are educational content in this application.
+1. Start MySQL in the XAMPP Control Panel.
+2. Open PowerShell as Administrator in this repository.
+3. Run:
 
-## Run locally (Windows / macOS / Linux)
-
-1. Install Node.js 22.13.0 or newer (Node 22 LTS is suitable).
-2. Extract the ZIP and open the `backend-lab` folder in VS Code.
-3. Open a terminal inside that folder and run:
-
-```sh
-npm install -g pnpm@11.25.0
-pnpm install --frozen-lockfile
-pnpm dev
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\setup-xampp.ps1
 ```
 
-Open the localhost URL printed in the terminal (normally http://localhost:5173).
-If Windows PowerShell blocks npm.ps1 or pnpm.ps1, use Command Prompt, or run `npm.cmd` / `pnpm.cmd` instead.
+4. Restart Apache from the XAMPP Control Panel if it was already running.
+5. Open http://localhost:8080.
 
-Keep the lockfile, pnpm-workspace.yaml, scripts, vendor assets, and .openai/hosting.json. The included clean clone defaults to the portable execution profile and does not require the ChatGPT editing environment to start local development. No database or external API key is required for the current learning features.
+The installer is idempotent. It creates `interview_platform`, creates the restricted `interview_app` database user, installs locked dependencies, migrates and seeds the curriculum, builds React, and validates Apache.
 
-## Where to make edits
+Run the queue worker in another terminal while developing:
 
-| What you want to change | Files |
-| --- | --- |
-| Main app, training screens and progress | app/backend-app.tsx |
-| Sidebar | app/sidebar.tsx |
-| Styles and fonts | app/globals.css |
-| Training tracks and questions | app/content.ts and the track files it imports |
-| Concepts | app/concepts.ts, app/engineering-concepts.ts, app/domain-concepts.ts |
-| Simplified explanations | app/plain-explanations.ts |
-| Concept reading layout | app/concept-reader.tsx |
-| Bullet formatting and Arabic/English isolation | app/reading-text.tsx, app/reading-format.ts |
-| Feature design content | app/feature-guides.ts, app/feature-playbooks.ts |
-| Feature page layout | app/feature-lab.tsx |
-| Diagrams | app/learning-flow.tsx, app/concept-illustration.tsx, app/concept-visuals.ts |
-| Feature simulators | app/feature-simulator.tsx |
-| Books, resources and project briefs | app/engineering-plan.ts, app/engineering-view.tsx |
-| URLs and navigation | app/navigation.ts, app/page.tsx, app/features/ |
-
-Some content files import additional modules; follow their imports to the topic you want to edit. Keep existing question IDs, track order, concept IDs and feature slugs stable when you want saved progress to remain compatible.
-
-## Checks and build
-
-```sh
-pnpm exec tsc --noEmit
-node tests/reading.cjs
-node tests/navigation.cjs
-node tests/handbook.cjs
-pnpm build
-pnpm start
+```powershell
+cd .\platform\api
+C:\xampp\php\php.exe artisan queue:work --tries=3 --timeout=60
 ```
 
-`pnpm start` previews the built Worker locally; use the URL it prints. `pnpm dev` is the usual choice while editing.
+Create an administrator through the protected CLI command:
 
-## Progress and evaluation
+```powershell
+cd .\platform\api
+C:\xampp\php\php.exe artisan admin:create admin@example.com
+```
 
-Learner progress, drafts and feature notes are stored in browser localStorage under `backend-lab-v1`. Export progress from the live site's progress page and import it on localhost to transfer it; browser storage is separate for each origin. Personal progress is not part of this source ZIP.
+## Development
 
-Interview scoring is an approximate client-side keyword/rubric check, with manual correction controls. It does not call an AI model or execute PHP code. The three feature simulators are educational client-side models.
+```powershell
+pnpm.cmd install --filter "@interview-platform/web..." --frozen-lockfile
+pnpm.cmd --filter @interview-platform/web dev
+cd platform\api
+C:\xampp\php\php.exe artisan serve
+```
 
-## Deployment
+The Vite server uses port 5174 and proxies `/api` and `/sanctum` to Laravel on port 8000.
 
-Editing this downloaded copy changes only your local copy. The running hosted site is unchanged. The included .openai/hosting.json keeps the original Site identity; it contains no secret. Publishing back to that Site requires authorized Sites access. Other hosts must support this Vinext/Cloudflare Worker setup or require an intentional deployment adaptation; do not upload only the app folder as a static site.
+## Verification
 
-README.md contains the original framework and Worker setup notes. No dependencies, build output, Git credentials/history, environment secrets or browser data are bundled.
+```powershell
+node node_modules\typescript\bin\tsc -b platform\web\tsconfig.json --pretty false
+cd platform\api
+C:\xampp\php\php.exe vendor\phpunit\phpunit\phpunit
+```
 
-## Source snapshot
+The production bundle is written to `platform/api/public/spa` and served by Laravel. Generated dependencies, builds, backups and environment files are ignored by Git.
 
-Commit: faa728477cc2d71cda5bd61db783a6ed5aee9896
-Export date: 2026-11-16
+See [architecture](docs/ARCHITECTURE.md) and the [migration/cleanup report](docs/CLEANUP-REPORT.md).

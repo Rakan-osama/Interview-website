@@ -1,5 +1,11 @@
 # Dependencies
 /node_modules/
+**/node_modules/
+**/vendor/
+/.corepack/
+/.npm-cache/
+**/.corepack/
+**/.npm-cache/
 /.pnp
 .pnp.*
 # Keep authored Yarn tooling if the project adopts Yarn.
@@ -11,14 +17,22 @@
 
 # Generated builds and framework state
 /dist/
+**/dist/
+/platform/api/public/spa/
 /.next/
 /.vinext/
+**/.next/
+**/.vinext/
 /out/
 next-env.d.ts
 *.tsbuildinfo
 
 # Test output
 /coverage/
+**/coverage/
+
+# Recoverable local migration backups
+/backups/
 
 # Package-manager logs
 npm-debug.log*
@@ -28,12 +42,15 @@ yarn-error.log*
 
 # Local environment and keys
 .env*
+!.env.example
 .dev.vars*
 *.pem
 
 # Checkout-local tool state
 /.wrangler/
 /.sites-runtime/
+**/.wrangler/
+**/.sites-runtime/
 
 # Workspace scaffolding and publication archives
 /.agents/

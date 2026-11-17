@@ -1,0 +1,166 @@
+openapi: 3.1.0
+info:
+  title: Interview Platform API
+  version: 1.0.0
+servers:
+  - url: /api/v1
+paths:
+  /tracks:
+    get:
+      operationId: listTracks
+      responses:
+        '200':
+          description: Curriculum tracks
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Track' } }
+  /lessons/{lesson}:
+    get:
+      operationId: getLesson
+      parameters:
+        - { name: lesson, in: path, required: true, schema: { type: string } }
+      responses:
+        '200':
+          description: Lesson detail
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LessonResponse' }
+  /lessons/{lesson}/attempts:
+    post:
+      operationId: submitAttempt
+      security: [{ sanctum: [] }]
+      parameters:
+        - { name: lesson, in: path, required: true, schema: { type: string } }
+        - { name: Idempotency-Key, in: header, required: false, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [answer]
+              properties: { answer: { type: string, minLength: 10, maxLength: 30000 } }
+      responses:
+        '202':
+          description: Assessment queued
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/Attempt' } }
+  /auth/register:
+    post:
+      operationId: register
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password, password_confirmation]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+                password_confirmation: { type: string, format: password }
+      responses: { '201': { description: Learner created } }
+  /legacy-progress/import:
+    post:
+      operationId: importLegacyProgress
+      security: [{ sanctum: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [progress]
+              properties:
+                apply: { type: boolean, default: false }
+                progress:
+                  type: object
+                  required: [attempts, drafts, bookmarks]
+                  properties:
+                    attempts: { type: object, additionalProperties: true }
+                    drafts: { type: object, additionalProperties: { type: string } }
+                    bookmarks: { type: array, items: { type: string } }
+      responses:
+        '200':
+          description: Previewed or imported legacy progress
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/ImportTotals' } }
+  /me/dashboard:
+    get:
+      operationId: getDashboard
+      security: [{ sanctum: [] }]
+      responses:
+        '200':
+          description: Authenticated learner progress summary
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [data]
+                properties: { data: { $ref: '#/components/schemas/Dashboard' } }
+components:
+  securitySchemes:
+    sanctum: { type: apiKey, in: cookie, name: interview-platform-session }
+  schemas:
+    LessonSummary:
+      type: object
+      required: [id, slug, legacyKey, title, completed]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        legacyKey: { type: [string, 'null'] }
+        title: { type: string }
+        objective: { type: string }
+        completed: { type: boolean }
+    Track:
+      type: object
+      required: [id, slug, title, lessons]
+      properties:
+        id: { type: string }
+        slug: { type: string }
+        title: { type: string }
+        titleAr: { type: [string, 'null'] }
+        description: { type: [string, 'null'] }
+        lessons: { type: array, items: { $ref: '#/components/schemas/LessonSummary' } }
+    LessonResponse:
+      type: object
+      required: [data]
+      properties: { data: { $ref: '#/components/schemas/LessonSummary' } }
+    Attempt:
+      type: object
+      required: [id, status]
+      properties:
+        id: { type: string }
+        status: { type: string, enum: [queued, processing, completed, failed, migrated] }
+    Dashboard:
+      type: object
+      required: [completedLessons, totalLessons, averageScore, bookmarkedLessons]
+      properties:
+        completedLessons: { type: integer, minimum: 0 }
+        totalLessons: { type: integer, minimum: 0 }
+        averageScore: { type: number, minimum: 0, maximum: 100 }
+        bookmarkedLessons: { type: integer, minimum: 0 }
+    ImportTotals:
+      type: object
+      required: [attempts, drafts, bookmarks, unique_lessons, mapped_lessons, unmapped_lessons]
+      properties:
+        attempts: { type: integer, minimum: 0 }
+        drafts: { type: integer, minimum: 0 }
+        bookmarks: { type: integer, minimum: 0 }
+        unique_lessons: { type: integer, minimum: 0 }
+        mapped_lessons: { type: integer, minimum: 0 }
+        unmapped_lessons: { type: integer, minimum: 0 }
+        already_imported: { type: boolean }

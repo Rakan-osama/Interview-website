@@ -14,12 +14,13 @@ import {ConceptReader,ReadingTools} from './concept-reader';
 import {FileText,ArrowLeft,ArrowRight,BookOpen,Check,ChevronLeft,Code2,Download,Flame,LayoutDashboard,Menu,Play,RotateCcw,Search,Target,TrendingUp,X,Bookmark,CheckCircle2,Clock,ExternalLink} from 'lucide-react';
 import {tracks,totalQuestions} from './content';
 import {validProgress,nextQuestionId,entryQuestion,matchesTrack,trackGroup} from './curriculum';
+import {loadProgress,saveProgress,type ProgressStorageMode} from './progress-storage';
 type Attempt={answer:string;hits:boolean[];date:string;flags:string[]};
 type Saved={attempts:Record<string,Attempt>;drafts:Record<string,string>;last:string;bookmarks:string[];engineering?:EngineeringProgress;design?:DesignProgress};
 const blank:Saved={attempts:{},drafts:{},last:'0-0',bookmarks:[]};
 const key='backend-lab-v1';
 export default function BackendApp({featureRoute=false,guideId,initialView='dashboard',initialQuestion,initialConcept}:{featureRoute?:boolean;guideId?:string;initialView?:string;initialQuestion?:string;initialConcept?:string}){
- const [data,setData]=useState<Saved>(blank),[ready,setReady]=useState(false),[view,setViewState]=useState(featureRoute?'design':initialView),[active,setActive]=useState(initialQuestion||'0-0'),[tab,setTab]=useState('lesson'),[search,setSearch]=useState(''),[filter,setFilter]=useState('all'),[group,setGroup]=useState('all'),[mobile,setMobile]=useState(false),[notice,setNotice]=useState(''),[showModel,setShowModel]=useState(false),[readingSize,setReadingSize]=useState(18),[conceptSearch,setConceptSearch]=useState(''),[conceptGroup,setConceptGroup]=useState('all'),[conceptId,setConceptId]=useState<string|null>(initialConcept||null);
+ const [data,setData]=useState<Saved>(blank),[ready,setReady]=useState(false),[storageMode,setStorageMode]=useState<ProgressStorageMode>('browser'),[view,setViewState]=useState(featureRoute?'design':initialView),[active,setActive]=useState(initialQuestion||'0-0'),[tab,setTab]=useState('lesson'),[search,setSearch]=useState(''),[filter,setFilter]=useState('all'),[group,setGroup]=useState('all'),[mobile,setMobile]=useState(false),[notice,setNotice]=useState(''),[showModel,setShowModel]=useState(false),[readingSize,setReadingSize]=useState(18),[conceptSearch,setConceptSearch]=useState(''),[conceptGroup,setConceptGroup]=useState('all'),[conceptId,setConceptId]=useState<string|null>(initialConcept||null);
  function rememberLocation(href:string){if(window.location.pathname+window.location.search+window.location.hash!==href)window.history.pushState(window.history.state,'',href)}
  function applyNavigation(target:NavigationTarget){
   setViewState(target.view);setConceptId(target.conceptId);setMobile(false);setNotice('');
@@ -34,14 +35,16 @@ export default function BackendApp({featureRoute=false,guideId,initialView='dash
   rememberLocation(href);applyNavigation(resolveNavigation('/',new URL(href,window.location.origin).search));
   window.scrollTo({top:0,behavior:'instant'});
  }
- useEffect(()=>{let restored:Saved=blank;try{const raw=localStorage.getItem(key);if(raw){const parsed=JSON.parse(raw);if(validProgress(parsed))restored=parsed}}catch{}
+ useEffect(()=>{let cancelled=false;(async()=>{let restored:Saved=blank;try{const raw=localStorage.getItem(key);if(raw){const parsed=JSON.parse(raw);if(validProgress(parsed))restored=parsed}}catch{}
+  const loaded=await loadProgress(restored,validProgress);if(cancelled)return;restored=loaded.value;setStorageMode(loaded.mode);
   if(featureRoute&&guideId&&featureGuides.some(g=>g.id===guideId)){const prior=restored.design||emptyDesignProgress;restored={...restored,design:{...prior,lastGuide:guideId,...(prior.lastGuide===guideId?{}:{section:'read',anchor:'overview'})}}}
   const target=resolveNavigation(window.location.pathname,window.location.search);
   if(target.questionId)restored={...restored,last:target.questionId};
   setData(restored);setActive(restored.last);applyNavigation(target);setReady(true)
+ })();return()=>{cancelled=true}
  },[featureRoute,guideId,initialView,initialQuestion,initialConcept]);
  useEffect(()=>{const onHistory=()=>{applyNavigation(resolveNavigation(window.location.pathname,window.location.search));window.scrollTo({top:0,behavior:'instant'})};window.addEventListener('popstate',onHistory);return()=>window.removeEventListener('popstate',onHistory)},[]);
- useEffect(()=>{if(ready)try{localStorage.setItem(key,JSON.stringify(data))}catch{setNotice('المتصفح منع الحفظ. صدّر تقدمك قبل ما تقفل.')}},[data,ready]);
+ useEffect(()=>{if(!ready)return;try{localStorage.setItem(key,JSON.stringify(data))}catch{setNotice('المتصفح منع الحفظ. صدّر تقدمك قبل ما تقفل.')}const timer=window.setTimeout(()=>{saveProgress(data).then(saved=>setStorageMode(saved?'mysql':'browser'))},500);return()=>window.clearTimeout(timer)},[data,ready]);
  useEffect(()=>{try{const size=Number(localStorage.getItem('backend-lab-reading-size'));if([16,18,20].includes(size))setReadingSize(size)}catch{}},[]);
  const changeReadingSize=(size:number)=>{setReadingSize(size);try{localStorage.setItem('backend-lab-reading-size',String(size))}catch{}};
  const openConcept=(id:string|null)=>{const href=conceptHref(id);if(window.location.pathname!=='/'){window.location.assign(href);return}if(!id){setConceptSearch('');setConceptGroup('all')}rememberLocation(href);applyNavigation(resolveNavigation('/',new URL(href,window.location.origin).search));window.scrollTo({top:0,behavior:'instant'})};
@@ -59,7 +62,7 @@ export default function BackendApp({featureRoute=false,guideId,initialView='dash
  const review=all.filter(x=>filter==='saved'?data.bookmarks.includes(x.id):weak.some(([id])=>id===x.id));
  return <div className="app" style={{'--reading-size':`${readingSize}px`} as CSSProperties}>
  <Sidebar view={view} mobile={mobile} onClose={()=>setMobile(false)} onView={navigateView} onOpen={open} attempts={data.attempts} active={active} weak={weak.length}/>
- <main><header><div className="breadcrumbs"><button className="menu" aria-label="فتح القائمة" onClick={()=>setMobile(true)}><Menu/></button><span>مساحة التعلّم</span><ChevronLeft size={14}/><strong>{view==='design'?'معمل تصميم Features':view==='dashboard'?'لوحة التدريب':view==='training'?track.title:view==='paths'?'مسارات التعلّم':view==='concepts'?'مكتبة المفاهيم':view==='projects'?'المشاريع التطبيقية':view==='resources'?'الكتب والمراجع':view==='review'?'المراجعة':'تقدّمي'}</strong></div><div className="header-right"><span className="live-dot"/> {ready?'تقدمك بيتحفظ تلقائيًا':'بنحمّل تقدمك'} <span className="level">Software Engineering</span></div></header>
+ <main><header><div className="breadcrumbs"><button className="menu" aria-label="فتح القائمة" onClick={()=>setMobile(true)}><Menu/></button><span>مساحة التعلّم</span><ChevronLeft size={14}/><strong>{view==='design'?'معمل تصميم Features':view==='dashboard'?'لوحة التدريب':view==='training'?track.title:view==='paths'?'مسارات التعلّم':view==='concepts'?'مكتبة المفاهيم':view==='projects'?'المشاريع التطبيقية':view==='resources'?'الكتب والمراجع':view==='review'?'المراجعة':'تقدّمي'}</strong></div><div className="header-right"><span className="live-dot"/> {ready?(storageMode==='mysql'?'تقدمك محفوظ في MySQL':'تقدمك محفوظ في المتصفح'):'بنحمّل تقدمك'} <span className="level">Software Engineering</span></div></header>
  <div className="content">{notice&&<div className="notice" role="status">{notice}<button onClick={()=>setNotice('')} aria-label="إغلاق التنبيه"><X size={16}/></button></div>}
  {(view==='dashboard'||view==='paths')&&<>
  <div className="page-title"><div><div className="eyebrow">استثمارك الأهم… في نفسك</div><h1>{view==='dashboard'?'أساس أقوى كـSoftware Engineer.':'كل مهارة، خطوة لقدّام.'}<span className="title-star">✦</span></h1><p><TechnicalText text={"فهم أعمق. إجابات أقوى. وثقة مبنية على تدريب حقيقي."}/></p></div><span className="experience"><Target size={16}/> لمطوّر بخبرة +2 سنوات</span></div>

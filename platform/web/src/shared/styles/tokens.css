@@ -1,0 +1,18 @@
+:root {
+  color-scheme: light;
+  --color-brand-700: #56328f;
+  --color-brand-600: #6b43a7;
+  --color-brand-100: #efe8fa;
+  --color-ink: #292435;
+  --color-muted: #6f667b;
+  --color-border: #e3ddea;
+  --color-surface: #ffffff;
+  --color-canvas: #f7f5fa;
+  --color-success: #207a55;
+  --color-danger: #a93d4a;
+  --shadow-card: 0 12px 34px rgb(64 42 91 / 8%);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --content-width: 1180px;
+}

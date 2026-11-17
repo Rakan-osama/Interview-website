@@ -14,6 +14,7 @@ const { d1, r2 } = hostingConfig;
 // macOS Seatbelt blocks FSEvents, so Codex previews need polling for HMR.
 const isCodexSeatbeltSandbox = process.env.CODEX_SANDBOX === "seatbelt";
 const managedLinux = readExecutionProfile() === "managed-linux";
+const localXampp = process.env.LOCAL_XAMPP === "1";
 
 const localBindingConfig = {
   main: "./worker/index.ts",
@@ -41,7 +42,10 @@ export default defineConfig(async ({ command }) => {
   configureToolEnvironment(process.cwd());
 
   // Wrangler snapshots its log path while the Cloudflare plugin is imported.
-  const { cloudflare } = await import("@cloudflare/vite-plugin");
+  // It is intentionally omitted for the lightweight XAMPP development mode.
+  const cloudflare = localXampp
+    ? null
+    : (await import("@cloudflare/vite-plugin")).cloudflare;
 
   return {
     server: {
@@ -54,9 +58,10 @@ export default defineConfig(async ({ command }) => {
     },
     plugins: [
       vinext(),
+      ...(localXampp ? [] : [
       sites({ mockAuth: !managedLinux }),
       connectorPreview(),
-      cloudflare({
+      cloudflare!({
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
         inspectorPort: false,
         config: {
@@ -87,6 +92,7 @@ export default defineConfig(async ({ command }) => {
             }
           : {}),
       }),
+      ]),
     ],
   };
 });
