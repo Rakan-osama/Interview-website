@@ -1,5 +1,6 @@
 export type CriterionAssessment = {
   criterionId: string;
+  label: string;
   met: boolean;
   score: number;
   evidence: string;

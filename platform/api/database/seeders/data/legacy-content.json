@@ -58,7 +58,9 @@
         {
           "title": "Comparison pitfalls",
           "question": "An API returns status as \"0\". Explain the risk of == and empty(), and how you would check a required field.",
-          "lesson": "== ممكن يعمل type juggling. === بيقارن القيمة والـtype. empty(\"0\") بترجع true؛ عشان كده متستخدمهاش لو صفر قيمة صحيحة.",
+          "lesson": "في PHP كل قيمة لها شيئان: القيمة نفسها، ونوعها. على سبيل المثال 0 من نوع integer، بينما \"0\" من نوع string رغم أن الاثنين يبدوان كصفر. عند استخدام == يجري PHP مقارنة مرنة: إذا كان النوعان مختلفين فقد يحوّل أحدهما تلقائيًا قبل المقارنة، وهذا يسمى type juggling. لذلك قد تحصل على true في حالات لم تقصد اعتبارها متساوية. أما === فهي مقارنة صارمة؛ لا تعيد true إلا عندما تتساوى القيمة والنوع معًا، ولذلك 0 === \"0\" نتيجتها false. الدالة empty() لا تسأل هل الحقل موجود فقط، بل تسأل هل يعتبر PHP قيمته فارغة، وPHP يعتبر \"0\" قيمة فارغة. لهذا قد ترفض empty() قيمة صحيحة في نظامك، مثل status أو quantity مسموح أن يساوي صفرًا. إذا كنت تريد معرفة هل المفتاح أُرسل فاستخدم array_key_exists، ثم تحقق من نوع القيمة ومن القيم المسموحة بشكل صريح.",
+          "plainExplanation": "تخيّل أن القيمة لها بطاقة مكتوب عليها المحتوى والنوع. الرقم 0 بطاقته integer، أما النص \"0\" فبطاقته string. العامل == قد يتجاهل اختلاف البطاقة ويحاول تحويل القيم قبل المقارنة، لكن === يفحص المحتوى والبطاقة معًا. وempty() لها قائمة خاصة من القيم التي تعتبرها فارغة، ومن ضمنها النص \"0\"؛ لذلك ليست مناسبة للتحقق من أن حقلًا مطلوبًا موجود عندما يكون الصفر قيمة مقبولة.",
+          "practicalExample": "API ترسل status=\"0\" للدلالة على حالة صحيحة. الكود if (empty($data['status'])) سيرفض الطلب مع أن القيمة موجودة. الأفضل أولًا استخدام array_key_exists('status', $data)، ثم التحقق أن status واحدة من القيم المسموحة، مع تحويل النوع بشكل مقصود إذا كان عقد الـAPI يسمح بذلك.",
           "model": "Use === when type matters. empty(\"0\") is true, so it can reject valid zero values. Use array_key_exists for key presence, distinguish null with an explicit check, and validate the accepted domain rather than relying on truthiness.",
           "criteria": [
             {

@@ -16,7 +16,7 @@ class DeterministicRubricEvaluatorTest extends TestCase
         $criterion = new RubricCriterion(['label' => 'Safety', 'terms' => ['idempotency', 'transaction']]);
         $criterion->id = 'criterion-1';
         $lesson->setRelation('criteria', new Collection([$criterion]));
-        $result = (new DeterministicRubricEvaluator())->evaluate($lesson, 'Use an idempotency key.');
+        $result = (new DeterministicRubricEvaluator)->evaluate($lesson, 'Use an idempotency key.');
         $this->assertSame(50, $result->overallScore);
         $this->assertSame('Safety', $result->gaps[0]);
         $this->assertSame('deterministic', $result->metadata['provider']);

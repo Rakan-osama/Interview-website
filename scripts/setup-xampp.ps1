@@ -40,7 +40,7 @@ if (-not (Test-Path -LiteralPath $envFile)) { Copy-Item -LiteralPath (Join-Path 
 $envText = Get-Content -Raw -LiteralPath $envFile
 $settings = @{
     APP_URL = "http://localhost:$ApachePort"; DB_DATABASE = $DatabaseName; DB_USERNAME = $DatabaseUser;
-    DB_PASSWORD = $DatabasePassword; SANCTUM_STATEFUL_DOMAINS = "localhost:$ApachePort,localhost,127.0.0.1:5174"
+    DB_PASSWORD = $DatabasePassword; ASSESSMENT_SYNC_LOCAL = "true"; SANCTUM_STATEFUL_DOMAINS = "localhost:$ApachePort,localhost:8000,127.0.0.1:8000,localhost:5174,127.0.0.1:5174,localhost,127.0.0.1"
 }
 foreach ($entry in $settings.GetEnumerator()) {
     $escaped = [regex]::Escape($entry.Key)

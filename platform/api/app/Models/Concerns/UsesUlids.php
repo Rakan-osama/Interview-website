@@ -9,5 +9,6 @@ trait UsesUlids
     use HasUlids;
 
     public $incrementing = false;
+
     protected $keyType = 'string';
 }

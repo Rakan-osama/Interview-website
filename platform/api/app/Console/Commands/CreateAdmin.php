@@ -8,6 +8,7 @@ use Illuminate\Console\Command;
 class CreateAdmin extends Command
 {
     protected $signature = 'admin:create {email} {--name=Administrator}';
+
     protected $description = 'Create or promote a protected administrator account';
 
     public function handle(): int
@@ -16,9 +17,12 @@ class CreateAdmin extends Command
         $user = User::firstOrNew(['email' => $email]);
         $user->name = $this->option('name');
         $user->role = 'admin';
-        if (! $user->exists) $user->password = $this->secret('Password');
+        if (! $user->exists) {
+            $user->password = $this->secret('Password');
+        }
         $user->save();
         $this->info("Administrator ready: {$user->email}");
+
         return self::SUCCESS;
     }
 }

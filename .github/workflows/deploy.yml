@@ -1,0 +1,60 @@
+name: Protected Production Deployment
+
+on:
+  workflow_dispatch:
+    inputs:
+      digest:
+        description: Immutable GHCR sha256 digest produced by the release workflow
+        required: true
+        type: string
+      previous_digest:
+        description: Last known healthy digest used for automatic rollback
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: read
+  id-token: write
+
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: vars.DEPLOY_ENABLED == 'true'
+    runs-on: ubuntu-24.04
+    environment: production
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Validate immutable inputs
+        shell: bash
+        run: |
+          [[ "${DIGEST}" =~ ^sha256:[a-f0-9]{64}$ ]]
+          [[ "${PREVIOUS_DIGEST}" =~ ^sha256:[a-f0-9]{64}$ ]]
+        env:
+          DIGEST: ${{ inputs.digest }}
+          PREVIOUS_DIGEST: ${{ inputs.previous_digest }}
+      - name: Obtain short-lived cloud identity through OIDC
+        run: sh ./scripts/deployment/oidc-login.sh
+        env:
+          OIDC_AUDIENCE: ${{ vars.OIDC_AUDIENCE }}
+          OIDC_ROLE: ${{ vars.OIDC_ROLE }}
+      - name: Expand schema and deploy the approved digest
+        run: sh ./scripts/deployment/deploy.sh "${DIGEST}"
+        env:
+          DIGEST: ${{ inputs.digest }}
+          DEPLOY_TARGET: ${{ vars.DEPLOY_TARGET }}
+      - name: Verify health and reload workers
+        run: sh ./scripts/deployment/verify.sh "${DIGEST}"
+        env:
+          DIGEST: ${{ inputs.digest }}
+          HEALTH_URL: ${{ vars.HEALTH_URL }}
+          DEPLOY_TARGET: ${{ vars.DEPLOY_TARGET }}
+      - name: Roll back to the previous digest
+        if: failure()
+        run: sh ./scripts/deployment/deploy.sh "${PREVIOUS_DIGEST}" --rollback
+        env:
+          PREVIOUS_DIGEST: ${{ inputs.previous_digest }}
+          DEPLOY_TARGET: ${{ vars.DEPLOY_TARGET }}

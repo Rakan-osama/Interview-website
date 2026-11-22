@@ -36,11 +36,11 @@ export default function ProgressPage() {
   });
   const unauthorized = summary.error instanceof ApiError && summary.error.status === 401;
 
-  return <div className="page">
+  return <div className="page" dir="ltr">
     <header><span className="muted">Learner state</span><h1>Progress and migration</h1></header>
     {unauthorized ? <section className="card"><h2>Sign in to sync progress</h2><p>Your browser data stays on this device until you sign in.</p><Link className="button" to="/login">Sign in</Link></section> :
       <section className="grid" aria-label="Progress summary">
-        <Metric label="Completed lessons" value={`${summary.data?.completedLessons ?? 0} / ${summary.data?.totalLessons ?? 350}`} />
+        <Metric label="Completed lessons" value={`${summary.data?.completedLessons ?? 0} / ${summary.data?.totalLessons ?? 0}`} />
         <Metric label="Average score" value={`${summary.data?.averageScore ?? 0} / 100`} />
         <Metric label="Bookmarks" value={String(summary.data?.bookmarkedLessons ?? 0)} />
       </section>}

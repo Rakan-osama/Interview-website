@@ -54,6 +54,7 @@ class ProgressTest extends TestCase
             'track_id' => $track->id, 'slug' => 'first', 'legacy_key' => '0-0', 'title' => 'First',
             'explanation' => 'Explanation', 'interview_question' => 'Question?', 'model_answer' => 'Answer',
         ]);
+
         return [$user, $lesson];
     }
 }

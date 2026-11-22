@@ -10,6 +10,7 @@ class AssessmentResult extends Model
     use UsesUlids;
 
     protected $guarded = [];
+
     protected $casts = [
         'criterion_scores' => 'array',
         'strengths' => 'array',

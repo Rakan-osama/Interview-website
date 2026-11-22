@@ -29,13 +29,35 @@ final class UpdateLesson
             unset($data['criteria'], $data['version']);
             $locked->fill($data + ['version' => $locked->version + 1])->save();
             $locked->criteria()->delete();
-            foreach ($criteria as $position => $criterion) $locked->criteria()->create($criterion + ['position' => $position]);
+            $conceptId = DB::table('concept_lesson')->where('lesson_id', $locked->id)->orderBy('concept_id')->value('concept_id');
+            if ($conceptId) {
+                DB::table('concept_claims')->where('concept_id', $conceptId)->where('claim_key', 'like', 'lesson-'.$locked->id.'-%')->delete();
+            }
+            foreach ($criteria as $position => $criterion) {
+                $created = $locked->criteria()->create($criterion + ['position' => $position]);
+                if (! $conceptId) {
+                    continue;
+                }
+                $claimId = (string) str()->ulid();
+                DB::table('concept_claims')->insert([
+                    'id' => $claimId, 'concept_id' => $conceptId,
+                    'claim_key' => 'lesson-'.$locked->id.'-'.$position,
+                    'statement' => $criterion['description'],
+                    'evidence_groups' => json_encode($criterion['evidence_groups'], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+                    'position' => $position, 'created_at' => now(), 'updated_at' => now(),
+                ]);
+                DB::table('rubric_criterion_claim')->insert([
+                    'rubric_criterion_id' => $created->id,
+                    'concept_claim_id' => $claimId,
+                ]);
+            }
             DB::table('admin_audit_logs')->insert([
                 'id' => (string) str()->ulid(), 'actor_id' => $actor->id, 'action' => 'lesson.updated',
                 'resource_type' => 'lesson', 'resource_id' => $locked->id,
                 'metadata' => json_encode(['version' => $locked->version]), 'request_id' => $requestId,
                 'created_at' => now(), 'updated_at' => now(),
             ]);
+
             return $locked->load('criteria');
         });
     }

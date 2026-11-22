@@ -10,5 +10,6 @@ class AssessmentJob extends Model
     use UsesUlids;
 
     protected $guarded = [];
+
     protected $casts = ['completed_at' => 'datetime'];
 }

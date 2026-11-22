@@ -31,6 +31,9 @@ class AssessmentTest extends TestCase
         $first->assertAccepted()->assertJsonPath('data.status', 'pending');
         $second->assertAccepted()->assertJsonPath('data.id', $first->json('data.id'));
         $this->assertDatabaseCount('attempts', 1);
-        $this->getJson('/api/v1/attempts/'.$first->json('data.id'))->assertOk()->assertJsonPath('data.status', 'completed')->assertJsonPath('data.overallScore', 100);
+        $this->getJson('/api/v1/attempts/'.$first->json('data.id'))->assertOk()
+            ->assertJsonPath('data.status', 'completed')->assertJsonPath('data.overallScore', 100)
+            ->assertJsonPath('data.criteria.0.label', 'Key')->assertJsonPath('data.criteria.0.met', true)
+            ->assertJsonStructure(['data' => ['criteria' => [['criterionId', 'label', 'met', 'score', 'evidence', 'feedback']]]]);
     }
 }

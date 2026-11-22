@@ -15,6 +15,7 @@ class AttemptController extends Controller
         $key = $request->header('Idempotency-Key');
         abort_if($key && ! Str::isUuid($key), 422, 'Idempotency-Key must be a UUID.');
         $attempt = $action->handle($request->user(), $lesson, $request->validated('answer'), $key);
+
         return response()->json(['data' => [
             'id' => $attempt->id, 'status' => 'pending', 'overallScore' => null,
             'criteria' => [], 'strengths' => [], 'gaps' => [], 'nextSteps' => [], 'confidence' => null,

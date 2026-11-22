@@ -16,13 +16,14 @@ class EvaluateAttempt implements ShouldQueue
     use Queueable;
 
     public int $tries = 3;
+
     public int $timeout = 60;
 
     public function __construct(public readonly string $attemptId) {}
 
     public function handle(AnswerEvaluatorFactory $factory): void
     {
-        $attempt = Attempt::with('lesson.criteria')->findOrFail($this->attemptId);
+        $attempt = Attempt::with('lesson.criteria.claims')->findOrFail($this->attemptId);
         $job = AssessmentJob::where('attempt_id', $attempt->id)->firstOrFail();
         $job->update(['status' => 'processing']);
 

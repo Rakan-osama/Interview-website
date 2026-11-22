@@ -7,6 +7,7 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -16,20 +17,29 @@ class AuthController extends Controller
 {
     public function register(RegisterRequest $request): JsonResponse
     {
-        $user = User::create($request->validated() + ['role' => 'learner']);
-        Auth::login($user);
-        $request->session()->regenerate();
+        $user = DB::transaction(function () use ($request): User {
+            $user = User::create($request->validated() + ['role' => 'learner']);
+            Auth::login($user);
+            $request->session()->regenerate();
+
+            return $user;
+        });
         $user->sendEmailVerificationNotification();
+
         return response()->json(['data' => $user->only('id', 'name', 'email', 'role')], 201);
     }
 
     public function login(Request $request): JsonResponse
     {
-        $credentials = $request->validate(['email' => ['required', 'email'], 'password' => ['required', 'string']]);
+        $credentials = $request->validate(
+            ['email' => ['required', 'email'], 'password' => ['required', 'string']],
+            ['email.required' => 'The email address is required.', 'email.email' => 'Enter a valid email address.', 'password.required' => 'The password is required.'],
+        );
         if (! Auth::attempt($credentials, true)) {
-            throw ValidationException::withMessages(['email' => ['The supplied credentials are invalid.']]);
+            throw ValidationException::withMessages(['email' => ['The email address or password is incorrect.']]);
         }
         $request->session()->regenerate();
+
         return response()->json(['data' => $request->user()->only('id', 'name', 'email', 'role')]);
     }
 
@@ -38,6 +48,7 @@ class AuthController extends Controller
         Auth::guard('web')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
+
         return response()->json([], 204);
     }
 
@@ -45,6 +56,7 @@ class AuthController extends Controller
     {
         $request->validate(['email' => ['required', 'email']]);
         Password::sendResetLink($request->only('email'));
+
         return response()->json(['message' => 'If the account exists, a reset link has been sent.']);
     }
 
@@ -58,6 +70,7 @@ class AuthController extends Controller
             $user->forceFill(['password' => Hash::make($password), 'remember_token' => Str::random(60)])->save();
         });
         abort_unless($status === Password::PASSWORD_RESET, 422, __($status));
+
         return response()->json(['message' => __($status)]);
     }
 }

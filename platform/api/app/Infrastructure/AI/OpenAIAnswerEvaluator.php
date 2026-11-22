@@ -18,11 +18,18 @@ final class OpenAIAnswerEvaluator implements AnswerEvaluator
             ->post('https://api.openai.com/v1/responses', [
                 'model' => config('assessment.openai.model'),
                 'store' => false,
-                'instructions' => 'Evaluate the interview answer only against the supplied rubric. Return evidence-based, concise feedback.',
+                'instructions' => 'Evaluate the interview answer only against the supplied question, canonical model answer, and canonical claims. Evidence groups contain acceptable aliases, not mandatory magic keywords. Award credit when the answer expresses the claim semantically. Give 100 when the candidate answer is identical to, or semantically covers all claims in, the canonical model answer. Do not invent requirements. Return concise English feedback grounded in quoted or paraphrased candidate evidence.',
                 'input' => json_encode([
                     'question' => $lesson->interview_question,
                     'model_answer' => $lesson->model_answer,
-                    'rubric' => $lesson->criteria->map->only(['id', 'label', 'terms'])->all(),
+                    'rubric' => $lesson->criteria->map(fn ($criterion): array => [
+                        'id' => $criterion->id,
+                        'label' => $criterion->label,
+                        'description' => $criterion->description,
+                        'evidence_groups' => $criterion->evidence_groups,
+                        'claims' => $criterion->claims->map->only(['id', 'statement'])->all(),
+                        'weight' => $criterion->weight,
+                    ])->all(),
                     'candidate_answer' => $answer,
                 ], JSON_THROW_ON_ERROR),
                 'text' => ['format' => $this->schema()],
@@ -35,13 +42,16 @@ final class OpenAIAnswerEvaluator implements AnswerEvaluator
         $payload = $response->json();
         $content = collect($payload['output'] ?? [])->flatMap(fn (array $item): array => $item['content'] ?? []);
         $refusal = $content->first(fn (array $item): bool => ($item['type'] ?? null) === 'refusal');
-        if ($refusal) throw new RuntimeException('OpenAI refused the assessment request.');
+        if ($refusal) {
+            throw new RuntimeException('OpenAI refused the assessment request.');
+        }
         $text = data_get($content->first(fn (array $item): bool => ($item['type'] ?? null) === 'output_text'), 'text');
         if (! is_string($text)) {
             throw new RuntimeException('OpenAI returned no structured assessment.');
         }
 
         $result = json_decode($text, true, flags: JSON_THROW_ON_ERROR);
+
         return new EvaluationResult(
             $result['overall_score'],
             $result['criteria'],
@@ -56,6 +66,7 @@ final class OpenAIAnswerEvaluator implements AnswerEvaluator
     private function schema(): array
     {
         $textList = ['type' => 'array', 'items' => ['type' => 'string']];
+
         return [
             'type' => 'json_schema',
             'name' => 'answer_assessment',
@@ -68,11 +79,11 @@ final class OpenAIAnswerEvaluator implements AnswerEvaluator
                     'overall_score' => ['type' => 'integer', 'minimum' => 0, 'maximum' => 100],
                     'criteria' => ['type' => 'array', 'items' => [
                         'type' => 'object', 'additionalProperties' => false,
-                        'required' => ['criterion_id', 'label', 'score', 'evidence'],
+                        'required' => ['criterion_id', 'label', 'score', 'evidence', 'feedback'],
                         'properties' => [
                             'criterion_id' => ['type' => 'string'], 'label' => ['type' => 'string'],
                             'score' => ['type' => 'integer', 'minimum' => 0, 'maximum' => 100],
-                            'evidence' => ['type' => 'string'],
+                            'evidence' => ['type' => 'string'], 'feedback' => ['type' => 'string'],
                         ],
                     ]],
                     'strengths' => $textList, 'gaps' => $textList, 'next_steps' => $textList,

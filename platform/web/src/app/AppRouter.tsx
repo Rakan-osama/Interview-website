@@ -1,8 +1,8 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate, RouterProvider } from "react-router-dom";
-import { AppShell } from "../features/shell/AppShell";
-import { LegacyRedirect } from "../features/navigation/LegacyRedirect";
 import { ProtectedRoute } from "../features/auth/ProtectedRoute";
+import { LegacyRedirect } from "../features/navigation/LegacyRedirect";
+import { AppShell } from "../features/shell/AppShell";
 
 const DashboardPage = lazy(() => import("../features/dashboard/DashboardPage"));
 const CatalogPage = lazy(() => import("../features/curriculum/CatalogPage"));
@@ -15,6 +15,8 @@ const LibraryDetailPage = lazy(() => import("../features/library/LibraryDetailPa
 const ProgressPage = lazy(() => import("../features/progress/ProgressPage"));
 const TrackPage = lazy(() => import("../features/curriculum/TrackPage"));
 const ProjectsPage = lazy(() => import("../features/projects/ProjectsPage"));
+const CompetenciesPage = lazy(() => import("../features/competencies/CompetenciesPage"));
+const CompetencyDetailPage = lazy(() => import("../features/competencies/CompetencyDetailPage"));
 
 const router = createBrowserRouter([
   { path: "/login", element: <LoginPage /> },
@@ -25,6 +27,8 @@ const router = createBrowserRouter([
       { index: true, element: <LegacyRedirect fallback={<DashboardPage />} /> },
       { path: "/dashboard", element: <DashboardPage /> },
       { path: "/tracks", element: <CatalogPage /> },
+      { path: "/competencies", element: <CompetenciesPage /> },
+      { path: "/competencies/:slug", element: <CompetencyDetailPage /> },
       { path: "/tracks/:trackSlug", element: <TrackPage /> },
       { path: "/progress", element: <ProgressPage /> },
       { path: "/tracks/:trackSlug/lessons/:lessonSlug", element: <LessonPage /> },
@@ -38,13 +42,9 @@ const router = createBrowserRouter([
       { path: "/projects", element: <ProjectsPage /> },
       { path: "*", element: <Navigate to="/dashboard" replace /> },
     ],
-  }]},
+  }] },
 ]);
 
 export function AppRouter() {
-  return (
-    <Suspense fallback={<div className="page-state">جارٍ تحميل المنصة…</div>}>
-      <RouterProvider router={router} />
-    </Suspense>
-  );
+  return <Suspense fallback={<div className="page-state">Loading the platform…</div>}><RouterProvider router={router} /></Suspense>;
 }

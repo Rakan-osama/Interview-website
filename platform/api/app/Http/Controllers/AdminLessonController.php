@@ -12,6 +12,7 @@ class AdminLessonController extends Controller
     public function update(UpdateLessonRequest $request, Lesson $lesson, UpdateLesson $action): JsonResponse
     {
         $lesson = $action->handle($request->user(), $lesson, $request->validated(), $request->attributes->get('request_id'));
+
         return response()->json(['data' => $lesson]);
     }
 }

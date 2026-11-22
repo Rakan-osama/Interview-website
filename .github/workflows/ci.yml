@@ -1,0 +1,158 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: PHP ${{ matrix.php }} / ${{ matrix.database }}
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ["8.3", "8.5"]
+        database: [mariadb, mysql]
+    services:
+      database:
+        image: ${{ matrix.database == 'mariadb' && 'mariadb:10.11' || 'mysql:8.4' }}
+        env:
+          MYSQL_DATABASE: interview_platform
+          MYSQL_USER: interview_app
+          MYSQL_PASSWORD: interview-test-password
+          MYSQL_ROOT_PASSWORD: root-test-password
+        ports: ["3306:3306"]
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot-test-password"
+          --health-interval=10s --health-timeout=5s --health-retries=12
+      redis:
+        image: redis:7.4-alpine
+        ports: ["6379:6379"]
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=3s --health-retries=10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f # 2.35.5
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: intl, pdo_mysql, pcntl, redis, zip
+          coverage: none
+      - name: Install PHP dependencies
+        working-directory: platform/api
+        run: composer install --no-interaction --prefer-dist
+      - name: Configure test application
+        working-directory: platform/api
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          php artisan config:clear
+        env:
+          APP_ENV: testing
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: interview_platform
+          DB_USERNAME: interview_app
+          DB_PASSWORD: interview-test-password
+          REDIS_HOST: 127.0.0.1
+      - name: Migrate, seed, and audit curriculum
+        working-directory: platform/api
+        run: |
+          php artisan migrate:fresh --seed --force
+          php artisan curriculum:audit
+        env: &test-env
+          APP_ENV: testing
+          DB_CONNECTION: mysql
+          DB_HOST: 127.0.0.1
+          DB_PORT: 3306
+          DB_DATABASE: interview_platform
+          DB_USERNAME: interview_app
+          DB_PASSWORD: interview-test-password
+          REDIS_HOST: 127.0.0.1
+          CACHE_STORE: redis
+          QUEUE_CONNECTION: redis
+          SESSION_DRIVER: database
+      - name: PHP syntax, formatting, and tests
+        working-directory: platform/api
+        run: |
+          find app database routes tests -name '*.php' -print0 | xargs -0 -n1 php -l
+          vendor/bin/pint --test
+          php artisan test
+        env: *test-env
+
+  frontend:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: "22"
+      - run: corepack enable
+      - run: pnpm install --filter @interview-platform/web... --frozen-lockfile
+      - run: pnpm --dir platform/web lint
+      - run: pnpm --dir platform/web typecheck
+      - run: pnpm --dir platform/web test
+      - run: pnpm --dir platform/web build
+
+  container-smoke:
+    needs: [backend, frontend]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3
+      - uses: docker/build-push-action@10e90e3645eae34f1e60eeb005ba3a3d33f178e8 # v6
+        with:
+          context: .
+          target: runtime
+          load: true
+          tags: backend-interview-lab:local
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+      - name: Start dependencies and migrate
+        run: |
+          printf 'APP_KEY=base64:MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=\n' > .env.docker
+          docker compose up -d db redis
+          docker compose --profile operations run --rm migrate
+          docker compose build web
+          docker compose up -d app web worker scheduler
+      - name: Smoke test
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:8080/up; then exit 0; fi
+            sleep 2
+          done
+          docker compose ps
+          docker compose logs --no-color app web
+          exit 1
+      - if: always()
+        run: docker compose down --volumes
+
+  source-links:
+    if: github.event_name == 'workflow_dispatch'
+    needs: backend
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: shivammathur/setup-php@bf6b4fbd49ca58e4608c9c89fba0b8d90bd2a39f # 2.35.5
+        with:
+          php-version: "8.3"
+      - working-directory: platform/api
+        run: composer install --no-interaction --prefer-dist
+      - working-directory: platform/api
+        run: |
+          cp .env.example .env
+          php artisan key:generate
+          touch database/database.sqlite
+          php artisan migrate:fresh --seed --force
+          php artisan curriculum:audit --links
+        env:
+          DB_CONNECTION: sqlite
+          DB_DATABASE: database/database.sqlite

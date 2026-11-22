@@ -18,6 +18,7 @@ class LegacyProgressController extends Controller
         $totals = ($data['apply'] ?? false)
             ? $action->apply($request->user(), $data['progress'], 'browser:backend-lab-v1')
             : $action->preview($data['progress']);
+
         return response()->json(['data' => $totals]);
     }
 }

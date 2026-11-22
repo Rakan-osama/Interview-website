@@ -22,4 +22,9 @@ class Lesson extends Model
     {
         return $this->hasMany(RubricCriterion::class)->orderBy('position');
     }
+
+    public function visuals(): HasMany
+    {
+        return $this->hasMany(LessonVisual::class)->orderBy('position');
+    }
 }
