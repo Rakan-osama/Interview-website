@@ -34,7 +34,7 @@ EXPOSE 9000
 STOPSIGNAL SIGTERM
 CMD ["php-fpm", "-F"]
 
-FROM nginx:1.27-alpine AS webserver
+FROM nginx:1.29-alpine AS webserver
 COPY docker/nginx/default.conf /etc/nginx/conf.d/default.conf
 COPY --from=runtime /var/www/html/public /var/www/html/public
 EXPOSE 8080
