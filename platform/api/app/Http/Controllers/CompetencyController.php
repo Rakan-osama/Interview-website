@@ -31,7 +31,7 @@ final class CompetencyController extends Controller
 
     private function payload(Competency $competency, array $completed, bool $withLessons): array
     {
-        $lessonIds = $competency->modules->flatMap->lessons->pluck('id')->unique()->values();
+        $lessonIds = $competency->modules->flatMap->lessons->whereNull('retired_at')->pluck('id')->unique()->values();
         $completedCount = $lessonIds->filter(fn (string $id): bool => in_array($id, $completed, true))->count();
         $total = $lessonIds->count();
 
@@ -44,14 +44,15 @@ final class CompetencyController extends Controller
             'position' => $competency->position,
             'progress' => ['completed' => $completedCount, 'total' => $total, 'percentage' => $total ? (int) round($completedCount * 100 / $total) : 0],
             'modules' => $competency->modules->map(function ($module) use ($completed, $withLessons): array {
-                $moduleCompleted = $module->lessons->filter(fn ($lesson): bool => in_array($lesson->id, $completed, true))->count();
+                $lessons = $module->lessons->whereNull('retired_at')->values();
+                $moduleCompleted = $lessons->filter(fn ($lesson): bool => in_array($lesson->id, $completed, true))->count();
                 $data = [
                     'id' => $module->id, 'key' => $module->module_key, 'title' => $module->title,
                     'summary' => $module->summary, 'position' => $module->position,
-                    'progress' => ['completed' => $moduleCompleted, 'total' => $module->lessons->count()],
+                    'progress' => ['completed' => $moduleCompleted, 'total' => $lessons->count()],
                 ];
                 if ($withLessons) {
-                    $data['lessons'] = $module->lessons->map(fn ($lesson): array => [
+                    $data['lessons'] = $lessons->map(fn ($lesson): array => [
                         'id' => $lesson->id, 'slug' => $lesson->slug, 'legacyKey' => $lesson->legacy_key,
                         'title' => $lesson->title, 'objective' => $lesson->objective ?? '',
                         'sortOrder' => $lesson->position, 'completed' => in_array($lesson->id, $completed, true),

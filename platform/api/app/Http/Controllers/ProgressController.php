@@ -16,7 +16,7 @@ final class ProgressController extends Controller
 
         return response()->json(['data' => [
             'completedLessons' => count($progress->completedLessonIds($userId)),
-            'totalLessons' => DB::table('lessons')->count(),
+            'totalLessons' => DB::table('lessons')->whereNull('retired_at')->count(),
             'averageScore' => round((float) ((clone $attempts)->whereNotNull('overall_score')->avg('overall_score') ?? 0), 1),
             'bookmarkedLessons' => DB::table('bookmarks')->where('user_id', $userId)->count(),
         ]]);

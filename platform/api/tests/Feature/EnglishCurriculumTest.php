@@ -25,9 +25,12 @@ final class EnglishCurriculumTest extends TestCase
         $this->assertDatabaseCount('resources', 12);
         $this->assertDatabaseCount('projects', 7);
         $this->assertDatabaseCount('competencies', 4);
-        $this->assertSame(432, DB::table('concept_lesson')->distinct()->count('lesson_id'));
+        $this->assertSame(222, DB::table('concept_lesson')->distinct()->count('lesson_id'));
+        $this->assertSame(432, DB::table('lessons')->whereNotNull('learning_content')->count());
         $this->assertSame(0, DB::table('rubric_criteria')->whereNull('description')->count());
-        $this->assertSame(DB::table('rubric_criteria')->count(), DB::table('rubric_criterion_claim')->count());
+        $linkedCriteria = DB::table('rubric_criteria')->whereExists(fn ($query) => $query->selectRaw('1')
+            ->from('concept_lesson')->whereColumn('concept_lesson.lesson_id', 'rubric_criteria.lesson_id'))->count();
+        $this->assertSame($linkedCriteria, DB::table('rubric_criterion_claim')->count());
 
         foreach (DB::table('lessons')->get() as $lesson) {
             $this->assertSame(0, DB::table('content_source_links')->where('resource_type', 'lesson')->where('resource_id', $lesson->id)->count() < 2 ? 1 : 0, "{$lesson->legacy_key} needs two sources");
@@ -55,6 +58,13 @@ final class EnglishCurriculumTest extends TestCase
         }
         $this->assertDatabaseHas('content_sources', ['source_key' => 'laravel-docs', 'applicable_version' => 'Laravel 12.x']);
         $this->assertDatabaseHas('content_sources', ['source_key' => 'oauth-bcp', 'applicable_version' => 'RFC 9700']);
+    }
+
+    public function test_curriculum_audit_accepts_lesson_owned_variable_depth_content(): void
+    {
+        $this->seed();
+
+        $this->artisan('curriculum:audit')->assertSuccessful();
     }
 
     public function test_snapshot_is_idempotent_and_preserves_every_existing_resource(): void

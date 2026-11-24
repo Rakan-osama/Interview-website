@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { useFieldArray, useForm, useWatch } from "react-hook-form";
 import { useNavigate, useParams } from "react-router-dom";
 import { apiRequest, ensureCsrfCookie } from "../../shared/api/client";
-import type { LearningSource, LessonVisual } from "../../entities/curriculum";
+import type { LearningSource, LessonLearningContent, LessonVisual } from "../../entities/curriculum";
 import { TechnicalDiagram } from "../../shared/components/TechnicalDiagram";
 
 type Criterion = { label: string; description: string; terms: string[]; evidenceGroups: string[][]; weight: number };
@@ -12,6 +12,8 @@ type LessonEditor = {
   practicalExample: string; interviewQuestion: string; modelAnswer: string; code: string;
   referenceSolution: string; commonMistake: string; pitfall: string; rubric: Criterion[];
   sources: LearningSource[]; visuals: LessonVisual[];
+  learningContent: LessonLearningContent; contentDepth: "full" | "brief";
+  retired: boolean; retiredAt?: string | null; supersededByLessonId: string; retirementReason: string;
 };
 type ContentAudit = {
   counts: Record<string, number>;
@@ -31,12 +33,12 @@ export default function AdminPage() {
   const { lessonId } = useParams();
   const navigate = useNavigate();
   const [lookup, setLookup] = useState(lessonId ?? "");
-  const form = useForm<LessonEditor>({ defaultValues: { rubric: [] } });
+  const form = useForm<LessonEditor>({ defaultValues: { rubric: [], retired: false, contentDepth: "full" } });
   const preview = useWatch({ control: form.control });
   const criteria = useFieldArray({ control: form.control, name: "rubric" });
   const lesson = useQuery({ queryKey: ["admin-lesson", lessonId], queryFn: () => apiRequest<LessonEditor>(`/lessons/${lessonId}`), enabled: Boolean(lessonId) });
   const audit = useQuery({ queryKey: ["content-audit"], queryFn: () => apiRequest<ContentAudit>("/admin/content-audit"), enabled: !lessonId });
-  useEffect(() => { if (lesson.data) form.reset(lesson.data); }, [lesson.data, form]);
+  useEffect(() => { if (lesson.data) form.reset({ ...lesson.data, retired: Boolean(lesson.data.retiredAt) }); }, [lesson.data, form]);
   const save = useMutation({
     mutationFn: async (values: LessonEditor) => {
       await ensureCsrfCookie();
@@ -45,7 +47,10 @@ export default function AdminPage() {
         plain_explanation: values.plainExplanation, practical_example: values.practicalExample,
         interview_question: values.interviewQuestion, model_answer: values.modelAnswer, code: values.code || null,
         reference_solution: values.referenceSolution || null, common_mistake: values.commonMistake || null,
-        pitfall: values.pitfall || null, criteria: values.rubric.map((criterion) => ({
+        pitfall: values.pitfall || null, learning_content: values.learningContent,
+        content_depth: values.learningContent.depth, retired: values.retired,
+        superseded_by_lesson_id: values.supersededByLessonId || null,
+        retirement_reason: values.retirementReason || null, criteria: values.rubric.map((criterion) => ({
           label: criterion.label, description: criterion.description, terms: criterion.terms,
           evidence_groups: criterion.evidenceGroups, weight: criterion.weight,
         })),
@@ -66,6 +71,10 @@ export default function AdminPage() {
   return <div className="page"><h1>Content management</h1><div className="lesson-layout">
     <form className="card" onSubmit={form.handleSubmit((values) => save.mutate(values))}>
       {fields.map(([name, label, rows]) => <label className="form-field" key={name}>{label}<textarea rows={rows} {...form.register(name as keyof LessonEditor)} /></label>)}
+      <label className="form-field">Structured learning content<textarea key={lesson.data?.version} rows={18} defaultValue={JSON.stringify(lesson.data?.learningContent ?? {}, null, 2)} onChange={(event) => {
+        try { form.setValue("learningContent", JSON.parse(event.target.value) as LessonLearningContent); } catch { /* save remains disabled by server validation until JSON is valid */ }
+      }} /></label>
+      <fieldset className="card"><legend>Retirement and successor</legend><label><input type="checkbox" {...form.register("retired")} /> Retire this lesson</label><label className="form-field">Successor lesson ULID<input {...form.register("supersededByLessonId")} /></label><label className="form-field">Evidence-backed retirement rationale<textarea rows={4} {...form.register("retirementReason")} /></label></fieldset>
       <h2>Claims and weighted rubric</h2>{criteria.fields.map((criterion, index) => <fieldset className="card" key={criterion.id}><legend>Criterion {index + 1}</legend><label className="form-field">Label<input {...form.register(`rubric.${index}.label`)} /></label><label className="form-field">Canonical claim<textarea rows={3} {...form.register(`rubric.${index}.description`)} /></label><label className="form-field">Evidence groups (semicolon between groups, comma between aliases)<input defaultValue={criterion.evidenceGroups.map((group) => group.join(", ")).join("; ")} onChange={(event) => {
         const groups = event.target.value.split(";").map((group) => group.split(",").map((alias) => alias.trim()).filter(Boolean)).filter((group) => group.length);
         form.setValue(`rubric.${index}.evidenceGroups`, groups);
@@ -76,6 +85,6 @@ export default function AdminPage() {
       <div className="review-actions"><button type="button" className="button secondary" onClick={() => review.mutate("editorial_reviewed")}>Mark editorially reviewed</button><button type="button" className="button secondary" onClick={() => review.mutate("needs_update")}>Mark as needing an update</button></div>
       {review.isSuccess && <p role="status">Review status updated.</p>}{review.isError && <p className="error">The review status could not be updated.</p>}
     </form>
-    <aside className="reading" aria-live="polite"><small>Learner preview</small><h1>{preview.title}</h1><h2>Objective</h2><p>{preview.objective}</p><h2>Explanation</h2><p>{preview.explanation}</p><h2>Interview question</h2><p>{preview.interviewQuestion}</p>{preview.code && <><h2>Code preview</h2><pre dir="ltr"><code>{preview.code}</code></pre></>}{preview.visuals?.map((visual) => visual.id ? <TechnicalDiagram key={visual.id} visual={visual as LessonVisual} /> : null)}{preview.sources?.length ? <><h2>Selected sources</h2><ul>{preview.sources.map((source) => <li key={source.url}>{source.title}</li>)}</ul></> : null}</aside>
+    <aside className="reading" aria-live="polite"><small>Learner preview</small><h1>{preview.title}</h1><h2>Objective</h2><p>{preview.objective}</p><h2>Topic brief</h2><p>{preview.learningContent?.brief}</p><h2>Interview question</h2><p>{preview.interviewQuestion}</p>{preview.code && <><h2>Code preview</h2><pre dir="ltr"><code>{preview.code}</code></pre></>}{preview.visuals?.map((visual) => visual.id ? <TechnicalDiagram key={visual.id} visual={visual as LessonVisual} /> : null)}{preview.sources?.length ? <><h2>Selected sources</h2><ul>{preview.sources.map((source) => <li key={source.url}>{source.title}</li>)}</ul></> : null}</aside>
   </div></div>;
 }

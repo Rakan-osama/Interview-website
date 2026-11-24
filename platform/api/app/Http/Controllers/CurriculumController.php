@@ -26,7 +26,9 @@ class CurriculumController extends Controller
 
     public function tracks(Request $request): JsonResponse
     {
-        $tracks = Track::query()->with('lessons:id,track_id,slug,legacy_key,title,objective,position')->orderBy('position')->get();
+        $tracks = Track::query()->with(['lessons' => fn ($query) => $query
+            ->whereNull('retired_at')->select('id', 'track_id', 'slug', 'legacy_key', 'title', 'objective', 'position')])
+            ->orderBy('position')->get();
         $completed = $this->completedLessonIds($request);
 
         return response()->json(['data' => $tracks->map(fn (Track $track) => $this->trackPayload($track, $completed))]);
@@ -34,32 +36,43 @@ class CurriculumController extends Controller
 
     public function track(Request $request, string $trackSlug): JsonResponse
     {
-        $track = Track::with('lessons')->where('slug', $trackSlug)->firstOrFail();
+        $track = Track::with(['lessons' => fn ($query) => $query->whereNull('retired_at')])
+            ->where('slug', $trackSlug)->firstOrFail();
 
         return response()->json(['data' => $this->trackPayload($track, $this->completedLessonIds($request))]);
     }
 
     public function lesson(Request $request, Lesson $lesson): JsonResponse
     {
+        $requested = $lesson;
+        $lesson = $this->activeLesson($lesson);
+
         return response()->json(['data' => $this->lessonPayload(
             $lesson->load(['track', 'criteria.claims', 'visuals']),
             $request->user(),
+            $requested->is($lesson) ? null : $requested,
         )]);
     }
 
     public function lessonBySlug(Request $request, string $trackSlug, string $lessonSlug): JsonResponse
     {
-        $lesson = Lesson::with(['track', 'criteria.claims', 'visuals'])
+        $requested = Lesson::with(['track', 'criteria.claims', 'visuals'])
             ->whereHas('track', fn ($query) => $query->where('slug', $trackSlug))
             ->where('slug', $lessonSlug)->firstOrFail();
+        $lesson = $this->activeLesson($requested)->load(['track', 'criteria.claims', 'visuals']);
 
-        return response()->json(['data' => $this->lessonPayload($lesson, $request->user())]);
+        return response()->json(['data' => $this->lessonPayload(
+            $lesson,
+            $request->user(),
+            $requested->is($lesson) ? null : $requested,
+        )]);
     }
 
     public function legacy(Request $request): JsonResponse
     {
         if ($legacyKey = $request->query('question')) {
             $lesson = Lesson::with('track')->where('legacy_key', $legacyKey)->firstOrFail();
+            $lesson = $this->activeLesson($lesson)->load('track');
 
             return response()->json(['data' => ['path' => "/tracks/{$lesson->track->slug}/lessons/{$lesson->slug}"]]);
         }
@@ -92,7 +105,7 @@ class CurriculumController extends Controller
         return $this->progress->completedLessonIds($request->user()->getKey());
     }
 
-    private function lessonPayload(Lesson $lesson, ?User $user): array
+    private function lessonPayload(Lesson $lesson, ?User $user, ?Lesson $retiredFrom = null): array
     {
         $concepts = DB::table('concepts')
             ->join('concept_lesson', 'concepts.id', '=', 'concept_lesson.concept_id')
@@ -129,7 +142,19 @@ class CurriculumController extends Controller
             'data' => $visual->data,
         ])->values()->all();
         $sources = $this->sources->for($lesson);
-        $canonicalCodeExamples = $concepts[0]['content']['codeExamples'] ?? [];
+        $learningContent = $lesson->learning_content ?: [
+            'schemaVersion' => 1,
+            'contentRevision' => 0,
+            'depth' => 'brief',
+            'topicKeywords' => [],
+            'brief' => $lesson->explanation,
+            'definition' => $lesson->explanation,
+            'guidedQuestions' => [['question' => $brief['task'], 'answer' => $lesson->model_answer]],
+            'mechanismSteps' => [], 'productionScenarios' => [], 'failureModes' => [],
+            'whenToUse' => [], 'whenNotToUse' => [], 'verificationChecklist' => [], 'codeExamples' => [],
+        ];
+        $learningContent['sources'] = $sources;
+        $canonicalCodeExamples = $learningContent['codeExamples'] ?? [];
 
         return [
             'id' => $lesson->id, 'slug' => $lesson->slug, 'legacyKey' => $lesson->legacy_key,
@@ -141,6 +166,17 @@ class CurriculumController extends Controller
             'version' => $lesson->version, 'practicalExample' => $lesson->practical_example ?? '',
             'commonMistake' => $lesson->common_mistake ?? '', 'referenceSolution' => $lesson->reference_solution ?? '',
             'concepts' => $concepts, 'sources' => $sources,
+            'learningContent' => $learningContent,
+            'contentDepth' => $lesson->content_depth,
+            'retiredAt' => $lesson->retired_at?->toIso8601String(),
+            'supersededByLessonId' => $lesson->superseded_by_lesson_id,
+            'retirementReason' => $lesson->retirement_reason,
+            'canonicalPath' => "/tracks/{$lesson->track->slug}/lessons/{$lesson->slug}",
+            'retiredFrom' => $retiredFrom ? [
+                'id' => $retiredFrom->id,
+                'title' => $retiredFrom->title,
+                'reason' => $retiredFrom->retirement_reason,
+            ] : null,
             'questionBrief' => $brief,
             'learnerState' => $learnerState,
             'track' => ['id' => $lesson->track->id, 'slug' => $lesson->track->slug, 'title' => $lesson->track->title, 'titleAr' => $lesson->track->title_ar],
@@ -157,6 +193,19 @@ class CurriculumController extends Controller
             ]] : []),
             'visuals' => $visuals,
         ];
+    }
+
+    private function activeLesson(Lesson $lesson): Lesson
+    {
+        $seen = [];
+        while ($lesson->retired_at !== null) {
+            abort_if(isset($seen[$lesson->id]), 500, 'A curriculum successor cycle was detected.');
+            $seen[$lesson->id] = true;
+            abort_unless($lesson->superseded_by_lesson_id, 410, 'This lesson was retired without a successor.');
+            $lesson = Lesson::query()->findOrFail($lesson->superseded_by_lesson_id);
+        }
+
+        return $lesson;
     }
 
     private function learnerState(?User $user, Lesson $lesson): array

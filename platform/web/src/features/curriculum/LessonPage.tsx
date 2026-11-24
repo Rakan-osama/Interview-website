@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import type { Assessment } from "../../entities/assessment";
 import type { Lesson, Track } from "../../entities/curriculum";
 import { apiRequest } from "../../shared/api/client";
@@ -19,6 +19,7 @@ export default function LessonPage() {
 
 function LessonExperience({ trackSlug, lessonSlug }: { trackSlug: string; lessonSlug: string }) {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [tab, setTab] = useState<TrainingTab>("learn");
   const lessonQuery = useQuery({ queryKey: ["lesson", trackSlug, lessonSlug], queryFn: () => apiRequest<Lesson>(`/tracks/${trackSlug}/lessons/${lessonSlug}`) });
   const trackQuery = useQuery({ queryKey: ["track", trackSlug], queryFn: () => apiRequest<Track>(`/tracks/${trackSlug}`) });
@@ -47,6 +48,11 @@ function LessonExperience({ trackSlug, lessonSlug }: { trackSlug: string; lesson
       void queryClient.invalidateQueries({ queryKey: ["tracks"] });
     }
   }, [queryClient, result.data?.status]);
+  useEffect(() => {
+    if (lessonQuery.data?.retiredFrom && lessonQuery.data.canonicalPath !== `/tracks/${trackSlug}/lessons/${lessonSlug}`) {
+      navigate(lessonQuery.data.canonicalPath, { replace: true });
+    }
+  }, [lessonQuery.data, lessonSlug, navigate, trackSlug]);
 
   if (lessonQuery.isPending) return <div className="page-state">Loading the lesson…</div>;
   if (!lessonQuery.data) return <div className="page-state error">The lesson could not be found.</div>;

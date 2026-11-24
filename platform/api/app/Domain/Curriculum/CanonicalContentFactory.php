@@ -114,6 +114,141 @@ final class CanonicalContentFactory
         ];
     }
 
+    /**
+     * Build teaching material owned by one lesson. Unlike concept content, this
+     * payload is never shared with another lesson, so a later seed cannot
+     * replace the questions shown for an unrelated topic.
+     */
+    public function lesson(array $lesson, array $criteria): array
+    {
+        $title = trim((string) $lesson['title']);
+        $question = trim((preg_split('/\s*Answer requirements:/u', (string) $lesson['interview_question'], 2) ?: [''])[0]);
+        $question = $this->specificInterviewQuestion($title, $question);
+        $answer = trim(explode("\n\nProduction decision:", (string) $lesson['model_answer'], 2)[0]);
+        $sentences = preg_split('/(?<=[.!?])\s+/u', $answer) ?: [];
+        $definition = trim(implode(' ', array_slice($sentences, 0, 3)));
+        if ($definition === '') {
+            $definition = trim((string) $lesson['explanation']);
+        }
+        $scenario = trim((string) ($lesson['practical_example'] ?? ''));
+        $pitfall = trim((string) ($lesson['pitfall'] ?? ''));
+        $criteria = array_values(array_filter($criteria, fn (array $criterion): bool => trim((string) ($criterion['label'] ?? '')) !== ''));
+        $depth = count($criteria) >= 2 && str_word_count($definition) >= 12 ? 'full' : 'brief';
+        $keywords = $this->topicKeywords($title, $criteria);
+
+        $guidedQuestions = [[
+            'question' => $question !== '' ? "{$title}: {$question}" : "What must an interview answer about {$title} explain?",
+            'answer' => $definition,
+        ]];
+        if ($depth === 'full') {
+            foreach (array_slice($criteria, 0, 3) as $criterion) {
+                $label = trim((string) $criterion['label']);
+                $description = trim((string) ($criterion['description'] ?? ''));
+                $terms = collect($criterion['terms'] ?? [])->filter()->take(4)->implode(', ');
+                $guidedQuestions[] = [
+                    'question' => "For {$title}, how does {$label} affect this scenario: {$question}",
+                    'answer' => trim($description.' '.($terms !== '' ? "Use the relevant evidence explicitly: {$terms}. " : '').$definition),
+                ];
+            }
+            if ($pitfall !== '' && count($guidedQuestions) < 5) {
+                $guidedQuestions[] = [
+                    'question' => "For {$title}, which failure or trade-off could invalidate this answer: {$question}",
+                    'answer' => $pitfall,
+                ];
+            }
+        }
+
+        $mechanism = $depth === 'full' ? collect($criteria)->take(4)->map(fn (array $criterion): array => [
+            'title' => trim((string) $criterion['label']),
+            'description' => trim((string) ($criterion['description'] ?? '')),
+        ])->filter(fn (array $step): bool => $step['description'] !== '')->values()->all() : [];
+
+        return [
+            'schemaVersion' => 1,
+            'contentRevision' => 1,
+            'depth' => $depth,
+            'topicKeywords' => $keywords,
+            'brief' => Str::words($definition, $depth === 'brief' ? 90 : 65, ''),
+            'definition' => $definition,
+            'guidedQuestions' => $guidedQuestions,
+            'mechanismSteps' => $mechanism,
+            'productionScenarios' => $depth === 'full' && $scenario !== '' ? [[
+                'context' => $scenario,
+                'decision' => $definition,
+                'constraints' => $pitfall,
+            ]] : [],
+            'failureModes' => $depth === 'full' && $pitfall !== '' ? [[
+                'cause' => $pitfall,
+                'symptom' => "The expected {$title} behavior is not preserved in the stated scenario.",
+                'prevention' => "Test the specific {$title} rule before accepting the implementation.",
+                'recovery' => "Restore the last valid state and repeat only work that is safe for this {$title} scenario.",
+                'monitoring' => "Observe the result or state transition named by the {$title} interview question.",
+            ]] : [],
+            'whenToUse' => $depth === 'full' ? [trim((string) ($lesson['objective'] ?? $definition))] : [],
+            'whenNotToUse' => $depth === 'full' && $pitfall !== '' ? [$pitfall] : [],
+            'verificationChecklist' => $depth === 'full' ? collect($criteria)->take(4)->map(
+                fn (array $criterion): string => "Verify {$criterion['label']} with an observable example, test, or result for {$title}.",
+            )->values()->all() : [],
+            'codeExamples' => empty($lesson['code']) ? [] : [[
+                'language' => 'php',
+                'label' => "{$title} example",
+                'code' => $lesson['code'],
+                'walkthrough' => "Trace how the code implements {$title}, including the input and the observable result.",
+                'expectedResult' => "The example demonstrates the behavior asked about in the {$title} interview question.",
+            ]],
+            'reviewStatus' => 'automated_verified',
+            'reviewedAt' => config('curriculum_sources.reviewed_at'),
+        ];
+    }
+
+    private function topicKeywords(string $title, array $criteria): array
+    {
+        $stop = ['and', 'or', 'the', 'with', 'from', 'into', 'for', 'versus', 'vs', 'in', 'of', 'a', 'an'];
+        $words = preg_split('/[^a-z0-9_]+/i', mb_strtolower($title)) ?: [];
+        foreach ($criteria as $criterion) {
+            $words = [...$words, ...($criterion['terms'] ?? [])];
+        }
+
+        return collect($words)->map(fn (mixed $word): string => mb_strtolower(trim((string) $word)))
+            ->filter(fn (string $word): bool => mb_strlen($word) > 1 && ! in_array($word, $stop, true))
+            ->unique()->take(16)->values()->all();
+    }
+
+    private function specificInterviewQuestion(string $title, string $fallback): string
+    {
+        if (! str_starts_with($fallback, "Explain {$title} in a production scenario")
+            && ! str_starts_with($fallback, "Explain how {$title} works in a production system")) {
+            return $fallback;
+        }
+
+        return match ($title) {
+            'Factory Method' => 'How does Factory Method move construction behind a polymorphic creation hook, and when is dependency injection simpler?',
+            'Abstract Factory' => 'How does Abstract Factory keep a family of related objects compatible without coupling clients to concrete classes?',
+            'Builder' => 'When does staged Builder construction prevent invalid complex objects better than a constructor or named constructor?',
+            'Prototype' => 'How do shallow and deep cloning change the safety of Prototype when nested mutable objects are present?',
+            'Singleton and Why It Often Hurts' => 'Which hidden dependencies and shared-state failures make Singleton risky, and which lifetime should replace it?',
+            'Adapter' => 'How should an Adapter translate both data and behavioral semantics without leaking a vendor contract into application code?',
+            'Bridge' => 'How does Bridge let an abstraction and its implementation vary independently, and why is that different from adapting a legacy API?',
+            'Composite' => 'How can Composite evaluate a tree of rules uniformly while preserving ordering, short-circuiting, and useful error details?',
+            'Decorator' => 'How does Decorator add behavior without changing the wrapped contract, and why can decorator order change the result?',
+            'Facade' => 'How can a Facade simplify a subsystem without absorbing its business rules and becoming a God Object?',
+            'Flyweight' => 'Which state can Flyweight safely share, which state must remain external, and when does the memory saving justify the complexity?',
+            'Proxy' => 'Where should Proxy enforce lazy loading, access, or remote communication while preserving the real subject contract?',
+            'Chain of Responsibility' => 'How should a Chain of Responsibility define ordering, termination, errors, and observability across handlers?',
+            'Command' => 'What must a Command capture to support queuing, retries, authorization, and idempotent execution?',
+            'Interpreter' => 'When is a small Interpreter appropriate for a grammar, and when should the design use Specification or a proven parser?',
+            'Iterator' => 'How can an Iterator stream a large result with bounded memory, and which operations make a second traversal unsafe?',
+            'Mediator' => 'How does Mediator reduce peer-to-peer coupling without centralizing every business rule in one object?',
+            'Memento' => 'How can Memento implement undo without exposing internals or retaining an unbounded history of large snapshots?',
+            'Observer' => 'Which consistency and delivery guarantees determine whether an Observer should run synchronously or asynchronously?',
+            'State' => 'When does State model behavior better than an enum and switch, and how are valid transitions enforced?',
+            'Strategy' => 'How does Strategy select interchangeable behavior without turning simple branching into unnecessary indirection?',
+            'Template Method' => 'When is a stable algorithm skeleton with overridable steps safer than composing independent strategies?',
+            'Visitor' => 'When does Visitor make new operations easier, and why does adding new element types become its central trade-off?',
+            default => $fallback,
+        };
+    }
+
     public function concept(string $title, array $lesson, array $existing): array
     {
         if (($existing['schemaVersion'] ?? null) === 3 && ($existing['contentRevision'] ?? null) === 7) {

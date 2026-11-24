@@ -22,12 +22,15 @@ final class ContentReviewController extends Controller
         $sourceCounts = DB::table('lessons')
             ->leftJoin('content_source_links', function ($join): void {
                 $join->on('content_source_links.resource_id', '=', 'lessons.id')->where('content_source_links.resource_type', 'lesson');
-            })->select('lessons.id', DB::raw('COUNT(content_source_links.content_source_id) AS source_count'))->groupBy('lessons.id');
-        $lessonsWithTooFewSources = DB::query()->fromSub($sourceCounts, 'lesson_source_counts')->where('source_count', '<', 2)->count();
+            })->whereNull('lessons.retired_at')->select('lessons.id', 'lessons.content_depth', DB::raw('COUNT(content_source_links.content_source_id) AS source_count'))->groupBy('lessons.id', 'lessons.content_depth');
+        $lessonsWithTooFewSources = DB::query()->fromSub($sourceCounts, 'lesson_source_counts')
+            ->where(fn ($query) => $query->where(fn ($full) => $full->where('content_depth', 'full')->where('source_count', '<', 2))
+                ->orWhere(fn ($brief) => $brief->where('content_depth', 'brief')->where('source_count', '<', 1)))->count();
 
         return response()->json(['data' => [
             'counts' => [
-                'tracks' => DB::table('tracks')->count(), 'lessons' => DB::table('lessons')->count(),
+                'tracks' => DB::table('tracks')->count(), 'lessons' => DB::table('lessons')->whereNull('retired_at')->count(),
+                'retiredLessons' => DB::table('lessons')->whereNotNull('retired_at')->count(),
                 'concepts' => DB::table('concepts')->count(), 'competencies' => DB::table('competencies')->count(),
                 'guides' => DB::table('feature_guides')->count(), 'resources' => DB::table('resources')->count(),
                 'projects' => DB::table('projects')->count(),
@@ -37,6 +40,10 @@ final class ContentReviewController extends Controller
                 'placeholderPseudocode' => DB::table('concepts')->where('content', 'like', '%Decision pseudocode%')->count(),
                 'genericMechanismProse' => DB::table('lessons')->where('explanation', 'like', '%authoritative state change%')->count(),
                 'lessonsWithFewerThanTwoSources' => $lessonsWithTooFewSources,
+                'lessonsWithoutOwnedContent' => DB::table('lessons')->whereNull('retired_at')->whereNull('learning_content')->count(),
+                'retiredLessonsWithoutSuccessor' => DB::table('lessons')->whereNotNull('retired_at')->where(function ($query): void {
+                    $query->whereNull('superseded_by_lesson_id')->orWhereNull('retirement_reason');
+                })->count(),
                 'claimsWithoutSources' => DB::table('concept_claims')->leftJoin('concept_claim_source', 'concept_claim_source.concept_claim_id', '=', 'concept_claims.id')->whereNull('concept_claim_source.concept_claim_id')->count(),
                 'duplicateVisualFingerprints' => DB::table('lesson_visuals')->whereNotNull('fingerprint')->groupBy('fingerprint')->havingRaw('COUNT(*) > 1')->count(),
             ],

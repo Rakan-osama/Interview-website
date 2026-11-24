@@ -27,6 +27,21 @@ final class UpdateLesson
             ]);
             $criteria = $data['criteria'];
             unset($data['criteria'], $data['version']);
+            $retired = (bool) ($data['retired'] ?? false);
+            unset($data['retired']);
+            if ($retired && (empty($data['superseded_by_lesson_id']) || empty($data['retirement_reason']))) {
+                throw new HttpResponseException(response()->json([
+                    'message' => 'A retired lesson requires an evidence-backed successor and rationale.',
+                ], 422));
+            }
+            if ($retired && $data['superseded_by_lesson_id'] === $locked->id) {
+                throw new HttpResponseException(response()->json(['message' => 'A lesson cannot supersede itself.'], 422));
+            }
+            $data['retired_at'] = $retired ? ($locked->retired_at ?? now()) : null;
+            if (! $retired) {
+                $data['superseded_by_lesson_id'] = null;
+                $data['retirement_reason'] = null;
+            }
             $locked->fill($data + ['version' => $locked->version + 1])->save();
             $locked->criteria()->delete();
             $conceptId = DB::table('concept_lesson')->where('lesson_id', $locked->id)->orderBy('concept_id')->value('concept_id');

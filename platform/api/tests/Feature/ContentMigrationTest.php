@@ -81,6 +81,67 @@ class ContentMigrationTest extends TestCase
             ->assertJsonPath('data.0.legacy_key', '0')->assertJsonCount(5, 'data.0.content.deliverables');
     }
 
+    public function test_php_fundamentals_uses_distinct_lesson_owned_questions_without_fallback_concepts(): void
+    {
+        $this->seed();
+        $user = User::factory()->create();
+        $track = DB::table('tracks')->where('legacy_key', '0')->first();
+        $lessons = DB::table('lessons')->where('track_id', $track->id)->orderBy('position')->get();
+
+        $this->assertCount(22, $lessons);
+        $this->assertSame(0, DB::table('concept_lesson')->whereIn('lesson_id', $lessons->pluck('id'))->count());
+        $questions = [];
+        foreach ($lessons as $lesson) {
+            $content = json_decode($lesson->learning_content, true, flags: JSON_THROW_ON_ERROR);
+            $this->assertContains($content['depth'], ['full', 'brief']);
+            $this->assertNotEmpty($content['brief']);
+            $this->assertNotEmpty($content['topicKeywords']);
+            $this->assertNotEmpty($content['guidedQuestions']);
+            $questions[] = mb_strtolower(trim($content['guidedQuestions'][0]['question']));
+        }
+        $this->assertCount(22, array_unique($questions));
+
+        $first = $lessons->first();
+        $last = $lessons->last();
+        $firstPayload = $this->actingAs($user)->getJson("/api/v1/lessons/{$first->id}")->assertOk()->json('data');
+        $lastPayload = $this->actingAs($user)->getJson("/api/v1/lessons/{$last->id}")->assertOk()->json('data');
+        $this->assertNull($firstPayload['learningConcept']);
+        $this->assertNull($lastPayload['learningConcept']);
+        $this->assertNotSame($firstPayload['learningContent']['guidedQuestions'], $lastPayload['learningContent']['guidedQuestions']);
+        $this->assertContains('https://www.php.net/manual/en/language.types.declarations.php', array_column($firstPayload['sources'], 'url'));
+        foreach ([3 => 'https://www.php.net/manual/en/language.types.array.php', 5 => 'https://www.php.net/manual/en/control-structures.foreach.php'] as $position => $url) {
+            $payload = $this->actingAs($user)->getJson('/api/v1/lessons/'.$lessons[$position]->id)->assertOk()->json('data');
+            $this->assertContains($url, array_column($payload['sources'], 'url'));
+        }
+    }
+
+    public function test_retired_lessons_redirect_to_a_successor_and_preserve_progress(): void
+    {
+        $this->seed();
+        $user = User::factory()->create();
+        $track = DB::table('tracks')->where('legacy_key', '0')->first();
+        $retired = Lesson::query()->where('track_id', $track->id)->orderBy('position')->firstOrFail();
+        $successor = Lesson::query()->where('track_id', $track->id)->where('id', '!=', $retired->id)->orderBy('position')->firstOrFail();
+        $retired->forceFill([
+            'retired_at' => now(),
+            'superseded_by_lesson_id' => $successor->id,
+            'retirement_reason' => 'All distinct claims are covered by the named successor.',
+        ])->save();
+        DB::table('draft_answers')->insert([
+            'id' => (string) str()->ulid(), 'user_id' => $user->id, 'lesson_id' => $retired->id,
+            'answer' => str_repeat('A retained historical answer. ', 3), 'version' => 1,
+            'created_at' => now(), 'updated_at' => now(),
+        ]);
+
+        $payload = $this->actingAs($user)->getJson("/api/v1/tracks/{$track->slug}/lessons/{$retired->slug}")
+            ->assertOk()->assertJsonPath('data.id', $successor->id)
+            ->assertJsonPath('data.retiredFrom.id', $retired->id)
+            ->assertJsonPath('data.learnerState.completed', true)->json('data');
+        $this->assertSame("/tracks/{$track->slug}/lessons/{$successor->slug}", $payload['canonicalPath']);
+        $this->actingAs($user)->getJson("/api/v1/tracks/{$track->slug}")->assertOk()->assertJsonCount(21, 'data.lessons');
+        $this->assertDatabaseHas('draft_answers', ['user_id' => $user->id, 'lesson_id' => $retired->id]);
+    }
+
     public function test_every_concept_has_the_complete_learning_structure(): void
     {
         $this->seed();

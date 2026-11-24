@@ -55,6 +55,25 @@ export type ConceptContent = {
   reviewStatus?: "draft" | "automated_verified" | "editorial_reviewed" | "needs_update";
   reviewedAt?: string;
 };
+export type LessonLearningContent = {
+  schemaVersion: number;
+  contentRevision: number;
+  depth: "full" | "brief";
+  topicKeywords: string[];
+  brief: string;
+  definition: string;
+  guidedQuestions: GuidedQuestion[];
+  mechanismSteps: MechanismStep[];
+  productionScenarios: Array<{ context: string; decision: string; constraints: string }>;
+  failureModes: FailureMode[];
+  whenToUse: string[];
+  whenNotToUse: string[];
+  verificationChecklist: string[];
+  codeExamples: CodeExample[];
+  sources: LearningSource[];
+  reviewStatus?: "draft" | "automated_verified" | "editorial_reviewed" | "needs_update";
+  reviewedAt?: string;
+};
 export type LessonVisual = {
   id: string;
   kind: "pipeline" | "data-flow" | "sequence" | "state-machine" | "architecture" | "comparison" | "entity-relationship" | "transaction-timeline" | "flow" | "state";
@@ -105,6 +124,10 @@ export type Lesson = LessonSummary & {
   referenceSolution: string;
   concepts: Array<{ id?: string; slug: string; title: string; group: string; intro: string; content?: ConceptContent }>;
   learningConcept: { id?: string; slug: string; title: string; group: string; intro: string; content: ConceptContent } | null;
+  learningContent: LessonLearningContent;
+  contentDepth: "full" | "brief";
+  canonicalPath: string;
+  retiredFrom: { id: string; title: string; reason: string } | null;
   sources: LearningSource[];
   rubric: RubricCriterion[];
   interview: { scenario: string; question: string; answerStructure: string[]; modelAnswer: string };

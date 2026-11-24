@@ -65,12 +65,26 @@ final class EnglishCurriculumSeeder extends Seeder
         DB::table('content_source_links')->whereIn('resource_type', ['lesson', 'concept'])->delete();
         DB::table('lesson_visuals')->delete();
         DB::table('concept_claims')->delete();
-        $this->ensureLessonConceptLinks();
+        $visitedConcepts = [];
 
         foreach (DB::table('lessons')->orderBy('track_id')->orderBy('position')->get() as $lesson) {
             $lessonData = (array) $lesson;
             $lessonData = $this->sanitizeLesson($lessonData);
-            DB::table('lessons')->where('id', $lesson->id)->update([...$lessonData, 'updated_at' => now()]);
+            $criteria = DB::table('rubric_criteria')->where('lesson_id', $lesson->id)->orderBy('position')->get()
+                ->map(function (object $criterion): array {
+                    $data = (array) $criterion;
+                    $data['terms'] = json_decode($criterion->terms ?: '[]', true) ?: [];
+
+                    return $data;
+                })->all();
+            $learningContent = $this->factory->lesson($lessonData, $criteria);
+            DB::table('lessons')->where('id', $lesson->id)->update([
+                ...$lessonData,
+                'learning_content' => json_encode($learningContent, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+                'content_depth' => $learningContent['depth'],
+                'updated_at' => now(),
+            ]);
+            $title = $lessonData['title'];
 
             $concept = DB::table('concepts')
                 ->join('concept_lesson', 'concepts.id', '=', 'concept_lesson.concept_id')
@@ -78,48 +92,30 @@ final class EnglishCurriculumSeeder extends Seeder
                 ->select('concepts.*')
                 ->orderBy('concepts.id')
                 ->first();
-            if (! $concept) {
-                continue;
-            }
-
-            $title = $this->english->title($concept->title, $concept->legacy_key);
-            $content = $this->factory->concept($title, $lessonData, json_decode($concept->content, true) ?: []);
-            DB::table('concepts')->where('id', $concept->id)->update([
-                'title' => $title,
-                'group_name' => $this->english->title($concept->group_name, 'Core concepts'),
-                'content' => json_encode($content, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
-                'updated_at' => now(),
-            ]);
             $this->upsertReview('lesson', $lesson->id, $lessonData['model_answer']);
-            $this->upsertReview('concept', $concept->id, json_encode($content, JSON_THROW_ON_ERROR));
 
             $selectedSources = $this->sourceKeys($title.' '.$lessonData['interview_question']);
             $this->linkSources('lesson', $lesson->id, $selectedSources, $sourceIds);
-            $this->linkSources('concept', $concept->id, $selectedSources, $sourceIds);
-            $this->createClaims($lesson->id, $concept->id, $selectedSources, $sourceIds);
+            if ($concept) {
+                if (! isset($visitedConcepts[$concept->id])) {
+                    $conceptTitle = $this->english->title($concept->title, $concept->legacy_key);
+                    $content = $this->factory->concept($conceptTitle, $lessonData, json_decode($concept->content, true) ?: []);
+                    DB::table('concepts')->where('id', $concept->id)->update([
+                        'title' => $conceptTitle,
+                        'group_name' => $this->english->title($concept->group_name, 'Core concepts'),
+                        'content' => json_encode($content, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+                        'updated_at' => now(),
+                    ]);
+                    $this->upsertReview('concept', $concept->id, json_encode($content, JSON_THROW_ON_ERROR));
+                    $visitedConcepts[$concept->id] = true;
+                }
+                $this->linkSources('concept', $concept->id, $selectedSources, $sourceIds);
+                $this->createClaims($lesson->id, $concept->id, $selectedSources, $sourceIds);
+            }
             $this->createVisual($lesson->id, $lessonData['title'].' '.$lessonData['interview_question']);
         }
 
         $this->rewriteUnvisitedConcepts($sourceIds);
-    }
-
-    private function ensureLessonConceptLinks(): void
-    {
-        $fallbackConceptId = DB::table('concepts')->orderBy('id')->value('id');
-        foreach (DB::table('lessons')->orderBy('track_id')->orderBy('position')->get() as $lesson) {
-            if (DB::table('concept_lesson')->where('lesson_id', $lesson->id)->exists()) {
-                continue;
-            }
-            $trackConceptId = DB::table('concept_lesson')
-                ->join('lessons', 'lessons.id', '=', 'concept_lesson.lesson_id')
-                ->where('lessons.track_id', $lesson->track_id)
-                ->orderByRaw('ABS(CAST(lessons.position AS SIGNED) - ?)', [$lesson->position])
-                ->value('concept_lesson.concept_id');
-            $conceptId = $trackConceptId ?: $fallbackConceptId;
-            if ($conceptId) {
-                DB::table('concept_lesson')->insert(['concept_id' => $conceptId, 'lesson_id' => $lesson->id]);
-            }
-        }
     }
 
     private function sanitizeLesson(array $lesson): array

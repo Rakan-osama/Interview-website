@@ -1,8 +1,113 @@
 <?php
 
 return [
-    'reviewed_at' => '2026-11-22',
+    'reviewed_at' => '2026-11-24',
     'sources' => [
+        'php-strict-types' => [
+            'title' => 'PHP Manual: Type declarations', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/language.types.declarations.php', 'version' => 'PHP 8.x', 'section' => 'Strict typing',
+            'keywords' => ['strict typing', 'strict_types', 'type declarations'],
+        ],
+        'php-comparisons' => [
+            'title' => 'PHP Manual: Comparison operators', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/language.operators.comparison.php', 'version' => 'PHP 8.x', 'section' => 'Comparison operators and type comparison tables',
+            'keywords' => ['comparison', 'empty()', 'type juggling'],
+        ],
+        'php-arrays' => [
+            'title' => 'PHP Manual: Arrays', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/language.types.array.php', 'version' => 'PHP 8.x', 'section' => 'Key casts and array semantics',
+            'keywords' => ['array key', 'key coercion', 'arrays and key'],
+        ],
+        'php-array-merge' => [
+            'title' => 'PHP Manual: array_merge', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/function.array-merge.php', 'version' => 'PHP 8.x', 'section' => 'String and numeric key behavior',
+            'keywords' => ['array merge', 'array_merge', 'union operator'],
+        ],
+        'php-foreach' => [
+            'title' => 'PHP Manual: foreach', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/control-structures.foreach.php', 'version' => 'PHP 8.x', 'section' => 'foreach and references',
+            'keywords' => ['foreach', 'references in foreach'],
+        ],
+        'php-object-references' => [
+            'title' => 'PHP Manual: Objects and references', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/language.oop5.references.php', 'version' => 'PHP 8.x', 'section' => 'Object identifiers and references',
+            'keywords' => ['value semantics and objects', 'object identifier', 'copy-on-write'],
+        ],
+        'php-closures' => [
+            'title' => 'PHP Manual: Anonymous functions', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/functions.anonymous.php', 'version' => 'PHP 8.x', 'section' => 'Variable inheritance and arrow functions',
+            'keywords' => ['closures', 'arrow functions', 'capture'],
+        ],
+        'php-generators' => [
+            'title' => 'PHP Manual: Generators overview', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/language.generators.overview.php', 'version' => 'PHP 8.x', 'section' => 'Generators and memory',
+            'keywords' => ['generators', 'yield', 'lazy processing'],
+        ],
+        'php-null' => [
+            'title' => 'PHP Manual: Null coalescing operator', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/language.operators.comparison.php#language.operators.comparison.coalesce', 'version' => 'PHP 8.x', 'section' => 'Null coalescing',
+            'keywords' => ['null handling', 'null coalescing', 'array_key_exists'],
+        ],
+        'php-match' => [
+            'title' => 'PHP Manual: match', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/control-structures.match.php', 'version' => 'PHP 8.x', 'section' => 'match expressions',
+            'keywords' => ['match and enums', 'match expression'],
+        ],
+        'php-exceptions' => [
+            'title' => 'PHP Manual: Exceptions', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/language.exceptions.php', 'version' => 'PHP 8.x', 'section' => 'Exceptions and finally',
+            'keywords' => ['exceptions', 'finally', 'throwable'],
+        ],
+        'php-datetimeimmutable' => [
+            'title' => 'PHP Manual: DateTimeImmutable', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/class.datetimeimmutable.php', 'version' => 'PHP 8.x', 'section' => 'Immutable date and time operations',
+            'keywords' => ['datetimeimmutable', 'billing date'],
+        ],
+        'php-json' => [
+            'title' => 'PHP Manual: json_decode', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/function.json-decode.php', 'version' => 'PHP 8.x', 'section' => 'Errors, flags, and big integers',
+            'keywords' => ['json failures', 'json_decode', 'malformed json'],
+        ],
+        'php-floats' => [
+            'title' => 'PHP Manual: Floating point numbers', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/language.types.float.php', 'version' => 'PHP 8.x', 'section' => 'Floating point precision',
+            'keywords' => ['numeric precision', 'money', 'floating point'],
+        ],
+        'php-readonly' => [
+            'title' => 'PHP Manual: Readonly properties', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/language.oop5.properties.php#language.oop5.properties.readonly-properties', 'version' => 'PHP 8.x', 'section' => 'Readonly properties',
+            'keywords' => ['readonly', 'invariants'],
+        ],
+        'php-named-arguments' => [
+            'title' => 'PHP Manual: Function arguments', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/functions.arguments.php#functions.named-arguments', 'version' => 'PHP 8.x', 'section' => 'Named arguments',
+            'keywords' => ['named arguments', 'parameter name'],
+        ],
+        'php-unicode' => [
+            'title' => 'PHP Manual: Multibyte strings', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/book.mbstring.php', 'version' => 'PHP 8.x', 'section' => 'Multibyte string functions',
+            'keywords' => ['string encoding', 'unicode', 'multibyte'],
+        ],
+        'php-passwords' => [
+            'title' => 'PHP Manual: Password hashing', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/book.password.php', 'version' => 'PHP 8.x', 'section' => 'Password hashing functions',
+            'keywords' => ['password hashes', 'password hashing'],
+        ],
+        'php-iterables' => [
+            'title' => 'PHP Manual: Iterable', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/language.types.iterable.php', 'version' => 'PHP 8.x', 'section' => 'Iterable type',
+            'keywords' => ['iterables', 'iterable'],
+        ],
+        'php-composite-types' => [
+            'title' => 'PHP Manual: Type system', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/language.types.type-system.php', 'version' => 'PHP 8.x', 'section' => 'Union and intersection types',
+            'keywords' => ['union and intersection types', 'union type', 'intersection type'],
+        ],
+        'php-overloading' => [
+            'title' => 'PHP Manual: Overloading', 'publisher' => 'The PHP Documentation Group',
+            'url' => 'https://www.php.net/manual/en/language.oop5.overloading.php', 'version' => 'PHP 8.x', 'section' => 'Magic property and method overloading',
+            'keywords' => ['magic methods', '__get', '__call'],
+        ],
         'php-manual' => [
             'title' => 'PHP Manual', 'publisher' => 'The PHP Documentation Group',
             'url' => 'https://www.php.net/manual/en/', 'version' => 'PHP 8.4', 'section' => 'Language Reference',

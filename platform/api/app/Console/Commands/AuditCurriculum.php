@@ -85,14 +85,13 @@ final class AuditCurriculum extends Command
 
     private function auditSources(array &$failures): void
     {
-        $missing = DB::table('lessons')->whereNotExists(function ($query): void {
-            $query->selectRaw('1')->from('content_source_links')
-                ->whereColumn('content_source_links.resource_id', 'lessons.id')
-                ->where('content_source_links.resource_type', 'lesson')
-                ->groupBy('content_source_links.resource_id')->havingRaw('COUNT(*) >= 2');
-        })->count();
-        if ($missing > 0) {
-            $failures[] = "{$missing} lessons have fewer than two linked sources.";
+        foreach (DB::table('lessons')->whereNull('retired_at')->get(['id', 'legacy_key', 'content_depth']) as $lesson) {
+            $minimum = $lesson->content_depth === 'brief' ? 1 : 2;
+            $actual = DB::table('content_source_links')->where('resource_type', 'lesson')
+                ->where('resource_id', $lesson->id)->count();
+            if ($actual < $minimum) {
+                $failures[] = "{$lesson->legacy_key} has {$actual} source(s); {$lesson->content_depth} lessons require {$minimum}.";
+            }
         }
         foreach (DB::table('content_sources')->get() as $source) {
             $host = parse_url($source->url, PHP_URL_HOST);
@@ -113,10 +112,13 @@ final class AuditCurriculum extends Command
         if ($missingSources > 0) {
             $failures[] = "{$missingSources} canonical claims have no direct source linkage.";
         }
-        $missingRubric = DB::table('rubric_criteria')->whereNotExists(function ($query): void {
-            $query->selectRaw('1')->from('rubric_criterion_claim')
-                ->whereColumn('rubric_criterion_claim.rubric_criterion_id', 'rubric_criteria.id');
-        })->count();
+        $missingRubric = DB::table('rubric_criteria')
+            ->whereExists(fn ($query) => $query->selectRaw('1')->from('concept_lesson')
+                ->whereColumn('concept_lesson.lesson_id', 'rubric_criteria.lesson_id'))
+            ->whereNotExists(function ($query): void {
+                $query->selectRaw('1')->from('rubric_criterion_claim')
+                    ->whereColumn('rubric_criterion_claim.rubric_criterion_id', 'rubric_criteria.id');
+            })->count();
         if ($missingRubric > 0) {
             $failures[] = "{$missingRubric} rubric criteria are not linked to claims.";
         }
@@ -165,18 +167,54 @@ final class AuditCurriculum extends Command
                 $failures[] = "{$concept->legacy_key} summary has {$summaryWords} words; expected 25-45.";
             }
             $questions = $content['guidedQuestions'] ?? [];
-            if (count($questions) < 4 || count($questions) > 7) {
-                $failures[] = "{$concept->legacy_key} must contain four to seven guided questions.";
+            if (count($questions) > 7) {
+                $failures[] = "{$concept->legacy_key} contains more than seven guided questions.";
             }
             foreach ($questions as $index => $question) {
-                $answerWords = str_word_count($question['answer'] ?? '');
-                if ($answerWords < 70) {
-                    $failures[] = "{$concept->legacy_key} guided answer ".($index + 1)." has {$answerWords} words; expected at least 70.";
+                if (trim((string) ($question['question'] ?? '')) === '' || trim((string) ($question['answer'] ?? '')) === '') {
+                    $failures[] = "{$concept->legacy_key} guided question ".($index + 1).' is incomplete.';
                 }
             }
         }
 
-        foreach (Lesson::query()->with('criteria')->get() as $lesson) {
+        $seenQuestions = [];
+        $trackPrimaryQuestions = [];
+        foreach (Lesson::query()->with('criteria')->whereNull('retired_at')->get() as $lesson) {
+            $content = $lesson->learning_content;
+            if (! is_array($content)) {
+                $failures[] = "{$lesson->legacy_key} has no lesson-owned learning content.";
+                continue;
+            }
+            $depth = $content['depth'] ?? null;
+            $questions = $content['guidedQuestions'] ?? [];
+            $expected = $depth === 'brief' ? [0, 1] : [2, 5];
+            if (! in_array($depth, ['full', 'brief'], true) || count($questions) < $expected[0] || count($questions) > $expected[1]) {
+                $failures[] = "{$lesson->legacy_key} has an invalid {$depth} guided-question count: ".count($questions).'.';
+            }
+            $keywords = array_filter($content['topicKeywords'] ?? [], 'is_string');
+            $searchable = mb_strtolower($lesson->title.' '.$lesson->interview_question.' '.collect($questions)->pluck('question')->implode(' '));
+            if ($keywords === [] || ! collect($keywords)->contains(fn (string $keyword): bool => str_contains($searchable, mb_strtolower($keyword)))) {
+                $failures[] = "{$lesson->legacy_key} learning questions do not cover a declared topic keyword.";
+            }
+            foreach ($questions as $index => $question) {
+                $text = $this->normalizeText((string) ($question['question'] ?? ''));
+                if ($text === '') {
+                    $failures[] = "{$lesson->legacy_key} guided question ".($index + 1).' is empty.';
+                    continue;
+                }
+                if (isset($seenQuestions[$text])) {
+                    $failures[] = "Duplicate guided question in {$seenQuestions[$text]} and {$lesson->legacy_key}.";
+                }
+                $seenQuestions[$text] = $lesson->legacy_key;
+                if ($index === 0) {
+                    foreach ($trackPrimaryQuestions[$lesson->track_id] ?? [] as [$otherKey, $otherText]) {
+                        if (count(explode(' ', $text)) >= 12 && count(explode(' ', $otherText)) >= 12 && $this->tokenSimilarity($text, $otherText) > 0.92) {
+                            $failures[] = "Near-duplicate primary questions in {$otherKey} and {$lesson->legacy_key}.";
+                        }
+                    }
+                    $trackPrimaryQuestions[$lesson->track_id][] = [$lesson->legacy_key, $text];
+                }
+            }
             $words = str_word_count(strip_tags($lesson->model_answer));
             if ($words < 250 || $words > 450) {
                 $failures[] = "{$lesson->legacy_key} model answer has {$words} words; expected 250-450.";
@@ -185,6 +223,26 @@ final class AuditCurriculum extends Command
                 $failures[] = "{$lesson->legacy_key} model answer does not score 100 against its own rubric.";
             }
         }
+
+        foreach (Lesson::query()->whereNotNull('retired_at')->get() as $lesson) {
+            if (! $lesson->superseded_by_lesson_id || ! trim((string) $lesson->retirement_reason)) {
+                $failures[] = "Retired lesson {$lesson->legacy_key} has no successor or rationale.";
+            }
+        }
+    }
+
+    private function normalizeText(string $value): string
+    {
+        return trim(preg_replace('/[^a-z0-9]+/i', ' ', mb_strtolower($value)) ?? '');
+    }
+
+    private function tokenSimilarity(string $left, string $right): float
+    {
+        $a = array_values(array_unique(explode(' ', $left)));
+        $b = array_values(array_unique(explode(' ', $right)));
+        $union = array_unique([...$a, ...$b]);
+
+        return $union === [] ? 0.0 : count(array_intersect($a, $b)) / count($union);
     }
 
     private function auditExactParagraphDuplicates(array &$failures): void

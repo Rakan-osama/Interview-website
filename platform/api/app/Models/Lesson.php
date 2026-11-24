@@ -13,6 +13,14 @@ class Lesson extends Model
 
     protected $guarded = [];
 
+    protected function casts(): array
+    {
+        return [
+            'learning_content' => 'array',
+            'retired_at' => 'datetime',
+        ];
+    }
+
     public function track(): BelongsTo
     {
         return $this->belongsTo(Track::class);
@@ -26,5 +34,10 @@ class Lesson extends Model
     public function visuals(): HasMany
     {
         return $this->hasMany(LessonVisual::class)->orderBy('position');
+    }
+
+    public function successor(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'superseded_by_lesson_id');
     }
 }

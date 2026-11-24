@@ -19,19 +19,26 @@ final class LearnerProgress
             ->filter(fn (object $draft): bool => $this->answerIsComplete($draft->answer))
             ->pluck('lesson_id');
 
-        return $attempts->merge($drafts)->unique()->values()->all();
+        $completed = $attempts->merge($drafts)->unique();
+        $successors = DB::table('lessons')->whereIn('id', $completed)->whereNotNull('superseded_by_lesson_id')
+            ->pluck('superseded_by_lesson_id');
+
+        return $completed->merge($successors)->unique()->values()->all();
     }
 
     public function lessonIsCompleted(string $userId, string $lessonId): bool
     {
-        if (DB::table('attempts')->where('user_id', $userId)->where('lesson_id', $lessonId)->exists()) {
+        $predecessors = DB::table('lessons')->where('superseded_by_lesson_id', $lessonId)->pluck('id');
+        $equivalentIds = $predecessors->prepend($lessonId)->all();
+        if (DB::table('attempts')->where('user_id', $userId)->whereIn('lesson_id', $equivalentIds)->exists()) {
             return true;
         }
 
         $answer = DB::table('draft_answers')
             ->where('user_id', $userId)
-            ->where('lesson_id', $lessonId)
-            ->value('answer');
+            ->whereIn('lesson_id', $equivalentIds)
+            ->pluck('answer')
+            ->first(fn (string $answer): bool => $this->answerIsComplete($answer));
 
         return is_string($answer) && $this->answerIsComplete($answer);
     }

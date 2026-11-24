@@ -53,6 +53,15 @@ final class ProfessionalCurriculumSeeder extends Seeder
         $lesson = DB::table('lessons')->where('legacy_key', $legacyKey)->first();
         $lessonId = $lesson?->id ?? (string) Str::ulid();
         $content = $this->conceptContent($topic);
+        $learningContent = [
+            ...$content,
+            'schemaVersion' => 1,
+            'contentRevision' => 1,
+            'depth' => 'full',
+            'brief' => $topic['summary'],
+            'topicKeywords' => collect(preg_split('/[^a-z0-9]+/i', mb_strtolower($topic['title'])) ?: [])
+                ->filter(fn (string $word): bool => mb_strlen($word) > 2)->unique()->values()->all(),
+        ];
         $modelAnswer = $this->modelAnswer($topic);
 
         DB::table('lessons')->updateOrInsert(['legacy_key' => $legacyKey], [
@@ -70,6 +79,8 @@ final class ProfessionalCurriculumSeeder extends Seeder
             'reference_solution' => $modelAnswer,
             'common_mistake' => $topic['avoid'],
             'pitfall' => $topic['failure']['cause'].' '.$topic['failure']['symptom'],
+            'learning_content' => json_encode($learningContent, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+            'content_depth' => 'full',
             'position' => $position,
             'version' => 3,
             'created_at' => $lesson?->created_at ?? now(),
@@ -113,9 +124,9 @@ final class ProfessionalCurriculumSeeder extends Seeder
             'definition' => $topic['definition'],
             'guidedQuestions' => [
                 ['question' => 'What is '.$topic['title'].', and which engineering guarantee does it provide?', 'answer' => $topic['summary'].' '.$topic['definition'].' The production decision is: '.$topic['use']],
-                ['question' => 'How does it work from input to an observable result?', 'answer' => $mechanism.' The important failure symptom is '.$failure['symptom'].' Prevention therefore includes '.$failure['prevention']],
-                ['question' => 'When should a production team use it, and when should the team choose a simpler boundary?', 'answer' => $topic['scenario'].' '.$topic['use'].' '.$topic['avoid'].' The choice must be tied to the stated scale, trust boundary, and recovery requirement rather than copied from another system.'],
-                ['question' => 'How can it fail, and how should engineers detect and recover from that failure?', 'answer' => 'Cause: '.$failure['cause'].' Symptom: '.$failure['symptom'].' Prevention: '.$failure['prevention'].' Recovery: '.$failure['recovery'].' Monitoring: '.$failure['monitoring'].' Rehearse that recovery before an incident, assign an owner, and retain enough evidence to distinguish successful repair from a temporary reduction in visible errors.'],
+                ['question' => 'How does '.$topic['title'].' work from input to an observable result?', 'answer' => $mechanism.' The important failure symptom is '.$failure['symptom'].' Prevention therefore includes '.$failure['prevention']],
+                ['question' => 'When should a production team use '.$topic['title'].', and when should the team choose a simpler boundary?', 'answer' => $topic['scenario'].' '.$topic['use'].' '.$topic['avoid'].' The choice must be tied to the stated scale, trust boundary, and recovery requirement rather than copied from another system.'],
+                ['question' => 'How can '.$topic['title'].' fail, and how should engineers detect and recover?', 'answer' => 'Cause: '.$failure['cause'].' Symptom: '.$failure['symptom'].' Prevention: '.$failure['prevention'].' Recovery: '.$failure['recovery'].' Monitoring: '.$failure['monitoring'].' Rehearse that recovery before an incident, assign an owner, and retain enough evidence to distinguish successful repair from a temporary reduction in visible errors.'],
             ],
             'mechanismSteps' => array_map(
                 fn (string $step, int $index): array => ['title' => 'Step '.($index + 1), 'description' => $step],
